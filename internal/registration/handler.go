@@ -2,9 +2,9 @@ package registration
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/kollektive-hackathon/battleblocks-backend/pkg/middleware"
-	"github.com/kollektive-hackathon/battleblocks-backend/pkg/reject"
-	"github.com/kollektive-hackathon/battleblocks-backend/pkg/utils"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
 	"gorm.io/gorm"
 	"net/http"
 	"strings"

@@ -3,10 +3,10 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/auth"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/firebase"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/registration"
-	"github.com/kollektive-hackathon/battleblocks-backend/pkg/firebase"
-	"github.com/kollektive-hackathon/battleblocks-backend/pkg/middleware"
-	"github.com/kollektive-hackathon/battleblocks-backend/pkg/pubsub"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -69,7 +69,11 @@ func setupApiRouter(db *gorm.DB) *gin.Engine {
 
 func setupViper() {
 	viper.AutomaticEnv()
-	viper.SetDefault("VARNAME", "0")
+
+	// kms
+	viper.SetDefault("GOOGLE_KMS_PROJECT_ID", "0")
+	viper.SetDefault("GOOGLE_KMS_LOCATION_ID", "0")
+	viper.SetDefault("GOOGLE_KMS_KEYRING_ID", "0")
 }
 
 func setupZerolog() {

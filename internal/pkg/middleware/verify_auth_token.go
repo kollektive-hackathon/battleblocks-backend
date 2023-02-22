@@ -3,9 +3,9 @@ package middleware
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/kollektive-hackathon/battleblocks-backend/pkg/firebase"
-	"github.com/kollektive-hackathon/battleblocks-backend/pkg/reject"
-	"github.com/kollektive-hackathon/battleblocks-backend/pkg/utils"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/firebase"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"strings"

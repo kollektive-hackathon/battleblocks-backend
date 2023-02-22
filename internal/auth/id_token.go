@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/kollektive-hackathon/battleblocks-backend/pkg/reject"
-	"github.com/kollektive-hackathon/battleblocks-backend/pkg/utils"
+	reject2 "github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"net/http"
@@ -48,7 +48,7 @@ func (ah authHandler) getIdentityPlatformTokenFromProviderIDToken(c *gin.Context
 			Err(err).
 			Msg("Error parsing ID token request body")
 
-		c.JSON(http.StatusBadRequest, reject.BodyParseProblem())
+		c.JSON(http.StatusBadRequest, reject2.BodyParseProblem())
 		return
 	}
 
@@ -59,7 +59,7 @@ func (ah authHandler) getIdentityPlatformTokenFromProviderIDToken(c *gin.Context
 		log.Info().
 			Msg("Empty ID and access token in provider token request")
 
-		c.JSON(http.StatusBadRequest, reject.NewProblem().
+		c.JSON(http.StatusBadRequest, reject2.NewProblem().
 			WithTitle("Either idToken or accessToken must be passed").
 			WithStatus(http.StatusBadRequest).
 			WithCode(errorTokenEmpty).
@@ -88,7 +88,7 @@ func (ah authHandler) getIdentityPlatformTokenFromProviderIDToken(c *gin.Context
 			Err(err).
 			Msg("Error calling Google Identity Platform idp keymgmt in endpoint")
 
-		c.JSON(http.StatusInternalServerError, reject.NewProblem().
+		c.JSON(http.StatusInternalServerError, reject2.NewProblem().
 			WithTitle("Failed to exchange provider ID token for an internal token pair").
 			WithStatus(http.StatusInternalServerError).
 			WithCode(errorTokenRequestError).
@@ -112,7 +112,7 @@ func (ah authHandler) getIdentityPlatformTokenFromProviderIDToken(c *gin.Context
 		Interface("response", errResBody).
 		Msgf("Failed to exchange %s ID token for a Google Identity Platform token pair", provider)
 
-	problem := reject.NewProblem().
+	problem := reject2.NewProblem().
 		WithTitle("Failed to exchange provider ID token for an internal token pair").
 		WithStatus(res.StatusCode).
 		WithDetail(errResBody.Error.Message).
