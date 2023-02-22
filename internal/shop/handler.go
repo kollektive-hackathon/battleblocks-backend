@@ -28,8 +28,4 @@ func (h shopHandler) getShopList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, blocks)
-
-	// TODO json tags
-
-	// TODO on buy listener: create nft and add it to user?
 }
