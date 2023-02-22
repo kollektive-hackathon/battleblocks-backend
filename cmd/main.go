@@ -6,6 +6,7 @@ import (
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/firebase"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/profile"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/registration"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -63,6 +64,7 @@ func setupApiRouter(db *gorm.DB) *gin.Engine {
 
 	auth.RegisterRoutes(routerGroup)
 	registration.RegisterRoutes(routerGroup, db)
+	profile.RegisterRoutes(routerGroup, db)
 
 	return apiRouter
 }

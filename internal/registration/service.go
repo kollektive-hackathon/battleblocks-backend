@@ -2,6 +2,7 @@ package registration
 
 import (
 	"context"
+	"fmt"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/keymgmt"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
 	reject2 "github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
@@ -12,7 +13,7 @@ type registrationService struct {
 	db *gorm.DB
 }
 
-func (s registrationService) register(username string, email string, googleIdentityId string) *reject2.ProblemWithTrace {
+func (s *registrationService) register(username string, email string, googleIdentityId string) *reject2.ProblemWithTrace {
 	ctx := context.Background()
 	defaultKeyIndex := 0
 	defaultKeyWeight := -1
@@ -42,6 +43,13 @@ func (s registrationService) register(username string, email string, googleIdent
 			GoogleIdentityId:         googleIdentityId,
 		}
 		result = s.db.Create(user)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		result = s.db.Exec(fmt.Sprintf(`INSERT INTO user_block_inventory(user_id, block_id, active)
+                            SELECT %s, id, true FROM block WHERE stock = true`, user.Id))
+
 		if result.Error != nil {
 			return result.Error
 		}
