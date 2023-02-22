@@ -86,7 +86,7 @@ func (ah authHandler) getIdentityPlatformTokenFromProviderIDToken(c *gin.Context
 	if err != nil {
 		log.Error().
 			Err(err).
-			Msg("Error calling Google Identity Platform idp sign in endpoint")
+			Msg("Error calling Google Identity Platform idp keymgmt in endpoint")
 
 		c.JSON(http.StatusInternalServerError, reject.NewProblem().
 			WithTitle("Failed to exchange provider ID token for an internal token pair").

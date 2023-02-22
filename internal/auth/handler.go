@@ -12,7 +12,7 @@ type authHandler struct {
 func RegisterRoutes(rg *gin.RouterGroup) {
 	handler := &authHandler{}
 
-	routes := rg.Group("/drops")
+	routes := rg.Group("/auth")
 	routes.POST("/google", handler.getIdentityPlatformTokenFromGoogleIdToken)
 	routes.POST("/apple", handler.getIdentityPlatformTokenFromAppleIdToken)
 	routes.POST("/refresh", RefreshToken)
