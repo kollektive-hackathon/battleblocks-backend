@@ -9,11 +9,11 @@ require (
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.0
 	github.com/google/uuid v1.3.0
+	github.com/gorilla/websocket v1.4.1-0.20190629185528-ae1634f6a989
 	github.com/jpillora/backoff v1.0.0
 	github.com/onflow/flow-go-sdk v0.33.0
 	github.com/rs/zerolog v1.29.0
 	github.com/spf13/viper v1.15.0
-	google.golang.org/protobuf v1.28.1
 	gorm.io/driver/postgres v1.4.8
 	gorm.io/gorm v1.24.5
 )
@@ -100,6 +100,7 @@ require (
 	google.golang.org/appengine/v2 v2.0.2 // indirect
 	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef // indirect
 	google.golang.org/grpc v1.52.0 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
