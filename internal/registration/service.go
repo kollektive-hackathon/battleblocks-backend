@@ -13,7 +13,7 @@ type registrationService struct {
 	db *gorm.DB
 }
 
-func (s registrationService) register(username string, email string, googleIdentityId string) *reject2.ProblemWithTrace {
+func (s *registrationService) register(username string, email string, googleIdentityId string) *reject2.ProblemWithTrace {
 	ctx := context.Background()
 	defaultKeyIndex := 0
 	defaultKeyWeight := -1
