@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/kollektive-hackathon/battleblocks-backend/pkg/middleware"
 	"github.com/kollektive-hackathon/battleblocks-backend/pkg/reject"
+	"github.com/kollektive-hackathon/battleblocks-backend/pkg/utils"
 	"gorm.io/gorm"
 	"net/http"
 	"strings"
@@ -40,7 +41,5 @@ func (h registrationHandler) register(c *gin.Context) {
 		return
 	}
 
-	// TODO get token claims - email? ...
-
-	h.registration.register(username)
+	h.registration.register(username, utils.GetUserEmail(c), utils.GetUserExternalId(c))
 }

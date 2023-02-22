@@ -36,7 +36,7 @@ func GenerateAsymetricKey(ctx context.Context, keyIndex, weight int) (*flow.Acco
 	k, err := createAsymetricKey(
 		ctx,
 		fmt.Sprintf("projects/%s/locations/%s/keyRings/%s", googleKmsProjectId, googleKmsLocationId, googleKmsKeyRingId),
-		fmt.Sprintf("flow-wallet-account-key-%s", u.String()),
+		fmt.Sprintf("battleblocks-custodial-wallet-account-key-%s", u.String()),
 	)
 	if err != nil {
 		return nil, nil, err

@@ -3,6 +3,7 @@ package registration
 import (
 	"context"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/keymgmt"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
 	"github.com/kollektive-hackathon/battleblocks-backend/pkg/reject"
 	"gorm.io/gorm"
 )
@@ -12,24 +13,35 @@ type registrationService struct {
 }
 
 func (s registrationService) register(username string, email string, googleIdentityId string) *reject.ProblemWithTrace {
-
-	// TODO create kms keymgmt
 	ctx := context.Background()
 	defaultKeyIndex := 0
 	defaultKeyWeight := -1
-	accountKey, privateKey, err := keymgmt.GenerateAsymetricKey(ctx, defaultKeyIndex, defaultKeyWeight)
+	accountKey, _, err := keymgmt.GenerateAsymetricKey(ctx, defaultKeyIndex, defaultKeyWeight)
 	if err != nil {
 		return nil
 	}
 
 	err = s.db.Transaction(func(tx *gorm.DB) error {
+		// TODO test with gcp and pass/save resourceID here from GenerateAsymetricKey
 
-		// TODO create custodialWallet
+		cw := model.CustodialWallet{
+			ResourceId: "resourceID-TODO",
+			PublicKey:  accountKey.PublicKey.String(),
+			Address:    "",
+		}
+		result := s.db.Create(cw)
+		if result.Error != nil {
+			return result.Error
+		}
 
-		result := s.db.Exec(
-			`INSERT INTO user(email, username, custodial_wallet_id, self_custody_wallet_address, google_identity_id)
-                   VALUES (?, ?, ?, null, ?)`, email, username, cc, googleIdentityId)
-
+		user := model.User{
+			Email:                    email,
+			Username:                 username,
+			CustodialWalletId:        cw.Id,
+			SelfCustodyWalletAddress: "",
+			GoogleIdentityId:         googleIdentityId,
+		}
+		result = s.db.Create(user)
 		if result.Error != nil {
 			return result.Error
 		}
@@ -40,6 +52,8 @@ func (s registrationService) register(username string, email string, googleIdent
 	if err != nil {
 		return &reject.ProblemWithTrace{Problem: reject.UnexpectedProblem(err), Cause: err}
 	}
+
+	// TODO pubsub tx service for creating custodial wallet address
 
 	return nil
 }
