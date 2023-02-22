@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	accessTokenRequired string = "error.marketplace.token.required"
-	accessTokenInvalid  string = "error.marketplace.token.invalid"
+	accessTokenRequired string = "error.token.required"
+	accessTokenInvalid  string = "error.token.invalid"
 )
 
 func VerifyAuthToken(context *gin.Context) {

@@ -6,11 +6,20 @@ import (
 )
 
 const (
-	genericUnexpectedError string = "error.marketplace.generic.unexpected"
-	cannotParseParams      string = "error.marketplace.generic.cannot-parse-params"
-	cannotParseBody        string = "error.marketplace.generic.cannot-parse-payload"
-	genericNotFound        string = "error.marketplace.generic.not-found"
+	genericUnexpectedError string = "error.generic.unexpected"
+	cannotParseParams      string = "error.generic.cannot-parse-params"
+	invalidRequest         string = "error.generic.invalid-request-payload"
+	cannotParseBody        string = "error.generic.cannot-parse-payload"
+	genericNotFound        string = "error.generic.not-found"
 )
+
+func RequestValidationProblem() Problem {
+	return NewProblem().
+		WithTitle("Invalid request payload").
+		WithStatus(http.StatusBadRequest).
+		WithCode(invalidRequest).
+		Build()
+}
 
 func RequestParamsProblem() Problem {
 	return NewProblem().
