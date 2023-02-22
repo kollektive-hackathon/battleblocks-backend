@@ -1,8 +1,8 @@
 package model
 
 type CustodialWallet struct {
-	Id         uint64 `gorm:"primaryKey"`
-	ResourceId string
-	PublicKey  string
-	Address    string
+	Id         uint64 `gorm:"primaryKey" json:"id"`
+	ResourceId string `json:"resourceId"`
+	PublicKey  string `json:"publicKey"`
+	Address    string `json:"address"`
 }
