@@ -13,7 +13,10 @@ type shopHandler struct {
 
 func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 	handler := shopHandler{
-		shop: shopService{db: db},
+		shop: shopService{
+			db:              db,
+			nftTransactions: &nftTransactionService{},
+		},
 	}
 
 	routes := rg.Group("/shop")
