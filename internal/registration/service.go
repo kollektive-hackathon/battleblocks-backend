@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/keymgmt"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
-	reject2 "github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
 	"gorm.io/gorm"
 )
 
@@ -13,7 +13,7 @@ type registrationService struct {
 	db *gorm.DB
 }
 
-func (s *registrationService) register(username string, email string, googleIdentityId string) *reject2.ProblemWithTrace {
+func (s *registrationService) register(username string, email string, googleIdentityId string) *reject.ProblemWithTrace {
 	ctx := context.Background()
 	defaultKeyIndex := 0
 	defaultKeyWeight := -1
@@ -58,7 +58,7 @@ func (s *registrationService) register(username string, email string, googleIden
 	})
 
 	if err != nil {
-		return &reject2.ProblemWithTrace{Problem: reject2.UnexpectedProblem(err), Cause: err}
+		return &reject.ProblemWithTrace{Problem: reject.UnexpectedProblem(err), Cause: err}
 	}
 
 	// TODO pubsub tx service for creating custodial wallet address
