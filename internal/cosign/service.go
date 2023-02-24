@@ -11,7 +11,9 @@ import (
 	"github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go-sdk/crypto/cloudkms"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 	"gorm.io/gorm"
+	"strings"
 )
 
 type cosignService struct {
@@ -19,7 +21,7 @@ type cosignService struct {
 }
 
 func (cs *cosignService) VerifyAndSign(credentials auth.Token, request CosignRequest) ([]byte, *reject.ProblemWithTrace) {
-	transaction, err := cs.parsePayload(request.Payload)
+	signable, err := cs.parsePayload(request.Payload)
 	if err != nil {
 		return nil, &reject.ProblemWithTrace{
 			Problem: reject.UnexpectedProblem(err),
@@ -29,47 +31,8 @@ func (cs *cosignService) VerifyAndSign(credentials auth.Token, request CosignReq
 
 	log.
 		Info().
-		Msg(fmt.Sprintf("Checking cosign transaction %+v", transaction))
+		Msg(fmt.Sprintf("Checking cosign transaction %+v", signable))
 
-	custodialWallet := cs.validate(transaction, credentials)
-
-	if custodialWallet != nil {
-		return cs.signVoucher(transaction, *custodialWallet)
-	}
-
-	err = fmt.Errorf("invalid request: you are not authorized to request this signature")
-	return nil, &reject.ProblemWithTrace{
-		Problem: reject.UnexpectedProblem(err),
-		Cause:   err,
-	}
-}
-
-func (cs *cosignService) validate(transaction *Signable, credentials auth.Token) *model.CustodialWallet {
-
-	serverTxCode := "" // TODO add code string here
-	requestTxCode := transaction.Cadence
-
-	if serverTxCode != requestTxCode {
-		return nil
-	}
-
-	userGoogleId := credentials.Subject
-	address := transaction.Args[0] // TODO check which arg is address
-
-	var custodialWallet model.CustodialWallet
-	result := cs.db.
-		Model(&custodialWallet).
-		Where("address = ? AND id = (SELECT custodial_wallet_id FROM user WHERE google_identity_id = ?)", address, userGoogleId).
-		First(&custodialWallet)
-
-	if result.Error != nil {
-		return nil
-	}
-
-	return &custodialWallet
-}
-
-func (cs *cosignService) signVoucher(signable *Signable, custodialWallet model.CustodialWallet) ([]byte, *reject.ProblemWithTrace) {
 	decodedData, err := hex.DecodeString(signable.Message[64:])
 
 	if err != nil {
@@ -88,6 +51,42 @@ func (cs *cosignService) signVoucher(signable *Signable, custodialWallet model.C
 		}
 	}
 
+	custodialWallet := cs.validate(transaction, credentials)
+
+	if custodialWallet != nil {
+		return cs.signVoucher(transaction, *custodialWallet)
+	}
+
+	err = fmt.Errorf("invalid request: you are not authorized to request this signature")
+	return nil, &reject.ProblemWithTrace{
+		Problem: reject.UnexpectedProblem(err),
+		Cause:   err,
+	}
+}
+
+func (cs *cosignService) validate(transaction *flow.Transaction, credentials auth.Token) *model.CustodialWallet {
+	serverTxCode := cs.getTxCode()
+	if serverTxCode != string(transaction.Script) {
+		return nil
+	}
+
+	userGoogleId := credentials.Subject
+	address := transaction.Authorizers[0].String()
+
+	var custodialWallet model.CustodialWallet
+	result := cs.db.
+		Model(&custodialWallet).
+		Where("address = ? AND id = (SELECT custodial_wallet_id FROM user WHERE google_identity_id = ?)", address, userGoogleId).
+		First(&custodialWallet)
+
+	if result.Error != nil {
+		return nil
+	}
+
+	return &custodialWallet
+}
+
+func (cs *cosignService) signVoucher(transaction *flow.Transaction, custodialWallet model.CustodialWallet) ([]byte, *reject.ProblemWithTrace) {
 	accountKMSKey, err := cloudkms.KeyFromResourceID(custodialWallet.ResourceId)
 	if err != nil {
 		return nil, &reject.ProblemWithTrace{
@@ -139,4 +138,118 @@ func (cs *cosignService) parsePayload(payload map[string]any) (*Signable, error)
 		return nil, err
 	}
 	return &t, nil
+}
+
+func (cs *cosignService) getTxCode() string {
+	txCode := cs.getTxCodeTemplate()
+
+	addressTemplates := map[string]string{
+		"BATTLE_BLOCKS_ACCOUNTS_ADDRESS": viper.Get("BATTLE_BLOCKS_ACCOUNTS_ADDRESS").(string),
+		"BATTLE_BLOCKS_NFT_ADDRESS":      viper.Get("BATTLE_BLOCKS_NFT_ADDRESS").(string),
+		"FUNGIBLE_TOKEN_ADDRESS":         viper.Get("FUNGIBLE_TOKEN_ADDRESS").(string),
+		"NON_FUNGIBLE_TOKEN_ADDRESS":     viper.Get("NON_FUNGIBLE_TOKEN_ADDRESS").(string),
+	}
+
+	for k, v := range addressTemplates {
+		txCode = strings.ReplaceAll(txCode, k, v)
+	}
+
+	return txCode
+}
+
+func (cs *cosignService) getTxCodeTemplate() string {
+	return `import BattleBlocksAccounts from 0xBATTLE_BLOCKS_ACCOUNTS_ADDRESS
+import BattleBlocksNFT from 0xBATTLE_BLOCKS_NFT_ADDRESS
+import FungibleToken from 0xFUNGIBLE_TOKEN_ADDRESS
+import NonFungibleToken from 0xNON_FUNGIBLE_TOKEN_ADDRESS
+
+
+transaction {
+
+    let authAccountCap: Capability<&AuthAccount>
+    let managerRef: &BattleBlocksAccounts.BattleBlocksAccountManager
+    let childRef: &BattleBlocksAccounts.BattleBlocksAccount
+
+    prepare(parent: AuthAccount, child: AuthAccount) {
+        
+        /* --- Configure parent's BattleBlocksAccountManager --- */
+        //
+        // Get BattleBlocksAccountManager Capability, linking if necessary
+        if parent.borrow<&BattleBlocksAccounts.BattleBlocksAccountManager>(from: BattleBlocksAccounts.BattleBlocksAccountManagerStoragePath) == nil {
+            // Save
+            parent.save(<-BattleBlocksAccounts.createBattleBlocksAccountManager(), to: BattleBlocksAccounts.BattleBlocksAccountManagerStoragePath)
+        }
+        // Ensure BattleBlocksAccountManagerPublic is linked properly
+        if !parent.getCapability<&{BattleBlocksAccounts.BattleBlocksAccountManagerPublic}>(BattleBlocksAccounts.BattleBlocksAccountManagerPublicPath).check() {
+            parent.unlink(BattleBlocksAccounts.BattleBlocksAccountManagerPublicPath)
+            // Link
+            parent.link<
+                &{BattleBlocksAccounts.BattleBlocksAccountManagerPublic}
+            >(
+                BattleBlocksAccounts.BattleBlocksAccountManagerPublicPath,
+                target: BattleBlocksAccounts.BattleBlocksAccountManagerStoragePath
+            )
+        }
+        // Get a reference to the BattleBlocksAccountManager resource
+        self.managerRef = parent
+            .borrow<
+                &BattleBlocksAccounts.BattleBlocksAccountManager
+            >(
+                from: BattleBlocksAccounts.BattleBlocksAccountManagerStoragePath
+            )!
+
+        /* --- Link the child account's AuthAccount Capability & assign --- */
+        //
+        // Get the AuthAccount Capability, linking if necessary
+        if !child.getCapability<&AuthAccount>(BattleBlocksAccounts.AuthAccountCapabilityPath).check() {
+            // Unlink any Capability that may be there
+            child.unlink(BattleBlocksAccounts.AuthAccountCapabilityPath)
+            // Link & assign the AuthAccount Capability
+            self.authAccountCap = child.linkAccount(BattleBlocksAccounts.AuthAccountCapabilityPath)!
+        } else {
+            // Assign the AuthAccount Capability
+            self.authAccountCap = child.getCapability<&AuthAccount>(BattleBlocksAccounts.AuthAccountCapabilityPath)
+        }
+
+        // Get a refernce to the child account
+        self.childRef = child.borrow<
+                &BattleBlocksAccounts.BattleBlocksAccount
+            >(
+                from: BattleBlocksAccounts.BattleBlocksAccountStoragePath
+            ) ?? panic("Could not borrow reference to BattleBlocksAccountTag in account ".concat(child.address.toString()))
+
+
+        /* --- Set up BattleBlocksNFT.Collection --- */
+        //
+        if parent.borrow<&BattleBlocksNFT.Collection>(from: BattleBlocksNFT.CollectionStoragePath) != nil {
+            // Create & save it to the account
+            parent.save(<-BattleBlocksNFT.createEmptyCollection(), to: BattleBlocksNFT.CollectionStoragePath)
+
+            // Create a public capability for the collection
+            parent.link<
+                &BattleBlocksNFT.Collection{NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, BattleBlocksNFT.BattleBlocksNFTCollectionPublic}
+                >(
+                    BattleBlocksNFT.CollectionPublicPath,
+                    target: BattleBlocksNFT.CollectionStoragePath
+                )
+
+            // Link the Provider Capability in private storage
+            parent.link<
+                &BattleBlocksNFT.Collection{NonFungibleToken.Provider}
+                >(
+                    BattleBlocksNFT.ProviderPrivatePath,
+                    target: BattleBlocksNFT.CollectionStoragePath
+                )
+        }
+    }
+
+    execute {
+        // Add child account if it's parent-child accounts aren't already linked
+        let childAddress = self.authAccountCap.borrow()!.address
+        if !self.managerRef.getBattleBlocksAccountAddresses().contains(childAddress) {
+            // Add the child account
+            self.managerRef.addAsBattleBlocksAccount(battleBlocksAccountCap: self.authAccountCap, battleBlocksAccount: self.childRef)
+        }
+    }
+}`
 }
