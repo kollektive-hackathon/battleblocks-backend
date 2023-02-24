@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
+	"regexp"
 	"strings"
 )
 
@@ -65,13 +66,17 @@ func (cs *cosignService) VerifyAndSign(credentials auth.Token, request CosignReq
 }
 
 func (cs *cosignService) validate(transaction *flow.Transaction, credentials auth.Token) *model.CustodialWallet {
-	serverTxCode := cs.getTxCode()
-	if serverTxCode != string(transaction.Script) {
+	requestTxCode := string(transaction.Script)
+	if cs.validateRequestTxCode(requestTxCode) {
 		return nil
 	}
 
 	userGoogleId := credentials.Subject
 	address := transaction.Authorizers[0].String()
+
+	log.
+		Debug().
+		Msg(fmt.Sprintf("Fetching custodial wallet by user id %s and address %s", userGoogleId, address))
 
 	var custodialWallet model.CustodialWallet
 	result := cs.db.
@@ -138,6 +143,24 @@ func (cs *cosignService) parsePayload(payload map[string]any) (*Signable, error)
 		return nil, err
 	}
 	return &t, nil
+}
+
+func (cs *cosignService) validateRequestTxCode(requestTxCode string) bool {
+	pattern := regexp.MustCompile(`\s`)
+	serverTxCode := cs.getTxCode()
+	serverTxCode = pattern.ReplaceAllString(serverTxCode, "")
+	requestTxCode = pattern.ReplaceAllString(requestTxCode, "")
+
+	if serverTxCode == requestTxCode {
+		return true
+	}
+
+	log.Warn().Msg(fmt.Sprintf(
+		"Transactions dont match: server \"%s\", request \"%s\"",
+		serverTxCode,
+		requestTxCode))
+
+	return false
 }
 
 func (cs *cosignService) getTxCode() string {
