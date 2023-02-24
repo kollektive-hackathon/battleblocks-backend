@@ -18,3 +18,12 @@ func JsonDecode[T any](body io.ReadCloser) T {
 	json.NewDecoder(body).Decode(&value)
 	return value
 }
+
+func JsonDecodeByteStream[T any](data []byte) (*T, error) {
+	var value T
+	err := json.Unmarshal(data, &value)
+	if err != nil {
+		return nil, err
+	}
+	return &value, nil
+}

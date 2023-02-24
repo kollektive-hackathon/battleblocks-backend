@@ -10,8 +10,8 @@ import (
 )
 
 type registrationService struct {
-	db                  *gorm.DB
-	accountTransactions *accountTransactionsService
+	db     *gorm.DB
+	bridge *accountContractBridge
 }
 
 func (s *registrationService) register(username string, email string, googleIdentityId string) *reject.ProblemWithTrace {
@@ -64,7 +64,7 @@ func (s *registrationService) register(username string, email string, googleIden
 		return &reject.ProblemWithTrace{Problem: reject.UnexpectedProblem(err), Cause: err}
 	}
 
-	s.accountTransactions.createCustodialAccount(publicKey)
+	s.bridge.createCustodialAccount(publicKey)
 
 	return nil
 }

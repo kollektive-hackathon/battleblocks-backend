@@ -7,8 +7,8 @@ import (
 )
 
 type shopService struct {
-	db              *gorm.DB
-	nftTransactions *nftTransactionService
+	db     *gorm.DB
+	bridge *nftContractBridge
 }
 
 func (ss *shopService) FindAll() ([]model.Block, *reject.ProblemWithTrace) {

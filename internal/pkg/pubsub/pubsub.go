@@ -26,6 +26,14 @@ func InitPubSub() {
 	log.Info().Msg(fmt.Sprintf("Successful pubsub init"))
 }
 
+func Subscribe(subscriptionHandler SubscriptionHandler) {
+	sub := client.Subscription(subscriptionHandler.SubscriptionId)
+	err := sub.Receive(ctx, subscriptionHandler.Handler)
+	if err != nil {
+		log.Error().Err(err).Msg(fmt.Sprintf("Subscriber error for sub id %s", subscriptionHandler.SubscriptionId))
+	}
+}
+
 func Publish(message Publishable, options ...map[string]any) {
 	t := getTopic(message.GetEventTopicName())
 	defer t.Stop()

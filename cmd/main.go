@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/auth"
-	"github.com/kollektive-hackathon/battleblocks-backend/internal/game"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/cosign"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/game"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/firebase"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
@@ -69,9 +69,9 @@ func setupApiRouter(db *gorm.DB) *gin.Engine {
 
 	ws.RegisterRoutes(routerGroup)
 	auth.RegisterRoutes(routerGroup)
-	registration.RegisterRoutes(routerGroup, db)
+	registration.RegisterRoutesAndSubscriptions(routerGroup, db)
 	profile.RegisterRoutes(routerGroup, db)
-	shop.RegisterRoutes(routerGroup, db)
+	shop.RegisterRoutesAndSubscriptions(routerGroup, db)
 	game.RegisterRoutes(routerGroup, db)
 	cosign.RegisterRoutes(routerGroup, db)
 

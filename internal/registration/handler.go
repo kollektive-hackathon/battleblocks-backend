@@ -3,6 +3,7 @@ package registration
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
 	"gorm.io/gorm"
@@ -14,16 +15,21 @@ type registrationHandler struct {
 	registration registrationService
 }
 
-func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
+func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 	handler := registrationHandler{
 		registration: registrationService{
-			db:                  db,
-			accountTransactions: &accountTransactionsService{},
+			db:     db,
+			bridge: &accountContractBridge{db},
 		},
 	}
 
 	routes := rg.Group("/registration")
 	routes.POST("/", middleware.VerifyAuthToken, handler.register)
+
+	pubsub.Subscribe(pubsub.SubscriptionHandler{
+		SubscriptionId: "blockchain.flow.account-created",
+		Handler:        handler.registration.bridge.handleCustodialAccountCreated,
+	})
 }
 
 type RegistrationRequest struct {
