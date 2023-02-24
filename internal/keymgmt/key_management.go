@@ -118,7 +118,7 @@ func GetPublicKey(ctx context.Context, kmsClient *cloudkms.Client, kmsKey *cloud
 }
 
 // AsymKey creates a new asymmetric signing key in Google KMS and returns
-// a cloudkms.Key (the "raw" result isn't needed)
+// a cloudkms.Key
 func createAsymetricKey(ctx context.Context, parent string, id string) (*cloudkms.Key, error) {
 	client, err := kms.NewKeyManagementClient(ctx)
 	if err != nil {
