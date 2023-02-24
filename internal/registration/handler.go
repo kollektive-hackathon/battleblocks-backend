@@ -16,7 +16,10 @@ type registrationHandler struct {
 
 func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 	handler := registrationHandler{
-		registration: registrationService{db: db},
+		registration: registrationService{
+			db:                  db,
+			accountTransactions: &accountTransactionsService{},
+		},
 	}
 
 	routes := rg.Group("/registration")

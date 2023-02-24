@@ -10,7 +10,8 @@ import (
 )
 
 type registrationService struct {
-	db *gorm.DB
+	db                  *gorm.DB
+	accountTransactions *accountTransactionsService
 }
 
 func (s *registrationService) register(username string, email string, googleIdentityId string) *reject.ProblemWithTrace {
@@ -22,12 +23,14 @@ func (s *registrationService) register(username string, email string, googleIden
 		return nil
 	}
 
+	publicKey := accountKey.PublicKey.String()
+
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		// TODO test with gcp and pass/save resourceID here from GenerateAsymetricKey
 
 		cw := model.CustodialWallet{
 			ResourceId: "resourceID-TODO",
-			PublicKey:  accountKey.PublicKey.String(),
+			PublicKey:  publicKey,
 			Address:    "",
 		}
 		result := s.db.Create(cw)
@@ -61,7 +64,7 @@ func (s *registrationService) register(username string, email string, googleIden
 		return &reject.ProblemWithTrace{Problem: reject.UnexpectedProblem(err), Cause: err}
 	}
 
-	// TODO pubsub tx service for creating custodial wallet address
+	s.accountTransactions.createCustodialAccount(publicKey)
 
 	return nil
 }

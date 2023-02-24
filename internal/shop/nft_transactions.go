@@ -33,7 +33,6 @@ func (nts *nftTransactionService) transfer(recipientAddress string, withdrawId u
 	}
 	cmd := blockchain.NewBlockchainCommand(commandType, payload, authorizers)
 	pubsub.Publish(cmd)
-
 }
 
 func (nts *nftTransactionService) transferAdmin(recipientAddress string, withdrawId uint64, authorizers []blockchain.Authorizer) {
