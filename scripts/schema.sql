@@ -10,7 +10,7 @@ CREATE TABLE custodial_wallet
     UNIQUE (address)
 );
 
-CREATE TABLE user
+CREATE TABLE battleblocks_user
 (
     id                          BIGSERIAL PRIMARY KEY,
     email                       VARCHAR(128) NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE user
 );
 
 CREATE TYPE RARITY AS enum ('COMMON', 'RARE', 'EPIC', 'LEGENDARY');
-CREATE TYPE BLOCK_TYPE AS enum ('1x1+2x1', '2x1+1x1', '3x1+2x1', '1x1', '2x2', '4x1');
+CREATE TYPE BLOCK_TYPE AS enum ('a12b1', 'a1b12', 'a123b2', 'a1', 'a12b12', 'a1234');
 
 CREATE TABLE block
 (
@@ -52,7 +52,6 @@ CREATE TABLE game
     time_started       TIMESTAMP WITH TIME ZONE,
     time_created       TIMESTAMP WITH TIME ZONE,
     time_limit_seconds INTEGER     NOT NULL,
-    -- map_size? or just use fixed to save time
     winner             BIGINT      NOT NULL
 );
 
@@ -67,10 +66,12 @@ CREATE TABLE block_placement
 
     UNIQUE (game_id, coordinateX, coordinateY),
 
-    CONSTRAINT fk_block_placement_user_id FOREIGN KEY (user_id) REFERENCES user (id),
+    CONSTRAINT fk_block_placement_user_id FOREIGN KEY (user_id) REFERENCES battleblocks_user (id),
     CONSTRAINT fk_block_placement_game_id FOREIGN KEY (game_id) REFERENCES game (id),
     CONSTRAINT fk_block_placement_block_id FOREIGN KEY (block_id) REFERENCES block (id)
 );
+
+
 
 CREATE TABLE nft
 (
@@ -94,7 +95,7 @@ CREATE TABLE move_history
 
     UNIQUE (game_id, coordinateX, coordinateY),
 
-    CONSTRAINT fk_move_history_user_id FOREIGN KEY (user_id) REFERENCES user (id),
+    CONSTRAINT fk_move_history_user_id FOREIGN KEY (user_id) REFERENCES battleblocks_user (id),
     CONSTRAINT fk_move_history_game_id FOREIGN KEY (game_id) REFERENCES game (id)
 );
 
@@ -105,7 +106,7 @@ CREATE TABLE user_block_inventory
     active   bool   NOT NULL,
 
     PRIMARY KEY (user_id, block_id),
-    CONSTRAINT fk_user_block_inventory_user_id FOREIGN KEY (user_id) REFERENCES user (id),
+    CONSTRAINT fk_user_block_inventory_user_id FOREIGN KEY (user_id) REFERENCES battleblocks_user (id),
     CONSTRAINT fk_user_block_inventory_block_id FOREIGN KEY (user_id) REFERENCES block (id)
 );
 
@@ -115,6 +116,5 @@ CREATE TABLE nft_purchase_history
     buyer_id     BIGINT                   NOT NULL,
     purchased_at TIMESTAMP WITH TIME ZONE NOT NULL,
 
-    CONSTRAINT nft_purchase_history_nft_id FOREIGN KEY (nft_id) REFERENCES nft (id),
-    CONSTRAINT nft_purchase_history_buyer_id FOREIGN KEY (buyer_id) REFERENCES user (id)
+    CONSTRAINT nft_purchase_history_buyer_id FOREIGN KEY (buyer_id) REFERENCES battleblocks_user (id)
 );
