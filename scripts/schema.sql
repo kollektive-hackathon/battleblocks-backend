@@ -37,7 +37,8 @@ CREATE TABLE block
     block_type BLOCK_TYPE NOT NULL,
     rarity     RARITY     NOT NULL,
     price      BIGINT     NOT NULL,
-    color_hex  CHAR(7)
+    color_hex  CHAR(7),
+    stock      BOOL       NOT NULL
 );
 
 CREATE TYPE GAME_STATUS AS enum ('CREATED', 'PREPARING', 'PLAYING', 'FINISHED');
@@ -108,7 +109,7 @@ CREATE TABLE user_block_inventory
 
     PRIMARY KEY (user_id, block_id),
     CONSTRAINT fk_user_block_inventory_user_id FOREIGN KEY (user_id) REFERENCES battleblocks_user (id),
-    CONSTRAINT fk_user_block_inventory_block_id FOREIGN KEY (user_id) REFERENCES block (id)
+    CONSTRAINT fk_user_block_inventory_block_id FOREIGN KEY (block_id) REFERENCES block (id)
 );
 
 CREATE TABLE nft_purchase_history
