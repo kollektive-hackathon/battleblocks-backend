@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	reject2 "github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/profile"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"net/http"
@@ -25,12 +26,13 @@ type IdentityPlatformTokenRequest struct {
 }
 
 type IdentityPlatformTokenResponse struct {
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"emailVerified"`
-	LocalID       string `json:"localId"`
-	IDToken       string `json:"idToken"`
-	RefreshToken  string `json:"refreshToken"`
-	ExpiresIn     string `json:"expiresIn"`
+	Email         string           `json:"email"`
+	EmailVerified bool             `json:"emailVerified"`
+	LocalID       string           `json:"localId"`
+	IDToken       string           `json:"idToken"`
+	RefreshToken  string           `json:"refreshToken"`
+	ExpiresIn     string           `json:"expiresIn"`
+	Profile       *profile.Profile `json:"profile"`
 }
 
 func (ah authHandler) getIdentityPlatformTokenFromGoogleIdToken(c *gin.Context) {
@@ -102,6 +104,24 @@ func (ah authHandler) getIdentityPlatformTokenFromProviderIDToken(c *gin.Context
 			Msgf("Successfully exchanged %s ID token for a Google Identity Platform token pair", provider)
 
 		resBody := utils.JsonDecode[IdentityPlatformTokenResponse](res.Body)
+
+		var p profile.Profile
+		result := ah.db.
+			Table("user").
+			Joins("INNER JOIN custodial_wallet ON user.custodial_wallet_id = custodial_wallet.id").
+			Where("user.email = ?", resBody.Email).
+			Select(`
+			user.id, 
+			user.email,
+			user.username,
+			custodial_wallet.address AS custodial_wallet_address,
+			user.self_custody_wallet_address AS self_custody_wallet_address
+		`).Scan(&p)
+
+		if result.Error == nil {
+			resBody.Profile = &p
+		}
+
 		c.JSON(http.StatusOK, resBody)
 		return
 	}
