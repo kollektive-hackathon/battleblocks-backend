@@ -8,3 +8,7 @@ type User struct {
 	SelfCustodyWalletAddress string `json:"selfCustodyWalletAddress"`
 	GoogleIdentityId         string `json:"googleIdentityId"`
 }
+
+func (User) TableName() string {
+	return "battleblocks_user"
+}

@@ -3,7 +3,7 @@ CREATE TABLE custodial_wallet
     id         BIGSERIAL PRIMARY KEY,
     resourceId TEXT         NOT NULL,
     public_key TEXT         NOT NULL,
-    address    VARCHAR(255) NOT NULL,
+    address    VARCHAR(255),
 
     UNIQUE (resourceId),
     UNIQUE (public_key),
@@ -45,6 +45,7 @@ CREATE TYPE GAME_STATUS AS enum ('CREATED', 'PREPARING', 'PLAYING', 'FINISHED');
 CREATE TABLE game
 (
     id                 BIGSERIAL PRIMARY KEY,
+    flow_id            BIGINT,
     owner_id           BIGINT      NOT NULL,
     challenger_id      BIGINT,
     game_status        GAME_STATUS NOT NULL,

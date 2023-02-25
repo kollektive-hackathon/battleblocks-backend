@@ -25,30 +25,31 @@ type PrivateKey struct {
 	HashAlgo crypto.HashAlgorithm      `json:"-"`
 }
 
-func GenerateAsymetricKey(ctx context.Context, keyIndex, weight int) (*flow.AccountKey, *PrivateKey, error) {
+func GenerateAsymetricKey(ctx context.Context, keyIndex, weight int) (*flow.AccountKey, *PrivateKey, *string, error) {
 	u := uuid.New()
 
-	adminGcpKmsResourceName := viper.Get("ADMIN_GCP_KMS_RESOURCE_NAME").(string)
+	gcpKmsKeyringPath := viper.Get("GCP_KMS_KEYRING_PATH").(string)
+	generatedKeyName := fmt.Sprintf("custodial-wallet-key-%s", u.String())
 
 	// Create the new key in Google KMS
 	k, err := createAsymetricKey(
 		ctx,
-		adminGcpKmsResourceName,
-		fmt.Sprintf("battleblocks-custodial-wallet-account-key-%s", u.String()),
+		gcpKmsKeyringPath,
+		fmt.Sprintf("custodial-wallet-key-%s", u.String()),
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	client, err := cloudkms.NewClient(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	pub, h, s, err := GetPublicKey(ctx, client, k)
 	if err != nil {
 		log.Error().Err(err).Msg(fmt.Sprintf("failed to get public key for Google KMS key, keyId: %s", k.KeyID))
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	f := flow.NewAccountKey().
@@ -65,7 +66,9 @@ func GenerateAsymetricKey(ctx context.Context, keyIndex, weight int) (*flow.Acco
 		HashAlgo: *h,
 	}
 
-	return f, p, nil
+	rid := fmt.Sprintf("%s/%s/cryptoKeyVersions/1", gcpKmsKeyringPath, generatedKeyName)
+
+	return f, p, &rid, nil
 }
 
 func GetPublicKey(ctx context.Context, kmsClient *cloudkms.Client, kmsKey *cloudkms.Key) (*crypto.PublicKey, *crypto.HashAlgorithm, *crypto.SignatureAlgorithm, error) {

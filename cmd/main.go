@@ -80,7 +80,7 @@ func setupApiRouter(db *gorm.DB) *gin.Engine {
 }
 
 func setupViper() {
-	//viper.AutomaticEnv()
+	viper.AutomaticEnv()
 	viper.SetConfigFile("./.env")
 	viper.ReadInConfig()
 }

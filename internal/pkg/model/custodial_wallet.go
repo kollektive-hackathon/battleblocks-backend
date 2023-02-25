@@ -6,3 +6,7 @@ type CustodialWallet struct {
 	PublicKey  string `json:"publicKey"`
 	Address    string `json:"address"`
 }
+
+func (CustodialWallet) TableName() string {
+	return "custodial_wallet"
+}

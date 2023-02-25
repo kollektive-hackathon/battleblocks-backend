@@ -33,6 +33,7 @@ func (b *accountContractBridge) createCustodialAccount(publicKey string) {
 }
 
 func (b *accountContractBridge) handleCustodialAccountCreated(_ context.Context, message *gcppubsub.Message) {
+	log.Info().Msg("Received message payload " + string(message.Data))
 	messagePayload, err := utils.JsonDecodeByteStream[AccountCreated](message.Data)
 	if err != nil {
 		log.Warn().Err(err).Msg("Error while parsing AccountCreated message")
