@@ -120,7 +120,7 @@ func (cs *cosignService) signVoucher(transaction *flow.Transaction, custodialWal
 		}
 	}
 
-	err = transaction.SignEnvelope(flow.HexToAddress(custodialWallet.Address), 0, signer)
+	err = transaction.SignEnvelope(flow.HexToAddress(*custodialWallet.Address), 0, signer)
 
 	if err != nil {
 		return nil, &reject.ProblemWithTrace{
