@@ -8,3 +8,5 @@
 *.test
 *.out
 go.work
+
+.env

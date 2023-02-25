@@ -80,11 +80,7 @@ func setupApiRouter(db *gorm.DB) *gin.Engine {
 
 func setupViper() {
 	viper.AutomaticEnv()
-
-	// kms
-	viper.SetDefault("GOOGLE_KMS_PROJECT_ID", "0")
-	viper.SetDefault("GOOGLE_KMS_LOCATION_ID", "0")
-	viper.SetDefault("GOOGLE_KMS_KEYRING_ID", "0")
+	viper.SetConfigFile("./.env")
 }
 
 func setupZerolog() {
