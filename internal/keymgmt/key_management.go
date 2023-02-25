@@ -28,14 +28,12 @@ type PrivateKey struct {
 func GenerateAsymetricKey(ctx context.Context, keyIndex, weight int) (*flow.AccountKey, *PrivateKey, error) {
 	u := uuid.New()
 
-	googleKmsProjectId := viper.Get("GOOGLE_KMS_PROJECT_ID").(string)
-	googleKmsLocationId := viper.Get("GOOGLE_KMS_LOCATION_ID").(string)
-	googleKmsKeyRingId := viper.Get("GOOGLE_KMS_KEYRING_ID").(string)
+	adminGcpKmsResourceName := viper.Get("ADMIN_GCP_KMS_RESOURCE_NAME").(string)
 
 	// Create the new key in Google KMS
 	k, err := createAsymetricKey(
 		ctx,
-		fmt.Sprintf("projects/%s/locations/%s/keyRings/%s", googleKmsProjectId, googleKmsLocationId, googleKmsKeyRingId),
+		adminGcpKmsResourceName,
 		fmt.Sprintf("battleblocks-custodial-wallet-account-key-%s", u.String()),
 	)
 	if err != nil {
