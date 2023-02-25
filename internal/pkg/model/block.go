@@ -8,3 +8,7 @@ type Block struct {
 	Price     uint32 `json:"price"`
 	ColorHex  string `json:"colorHex"`
 }
+
+func (Block) TableName() string {
+	return "block"
+}

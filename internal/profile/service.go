@@ -12,24 +12,32 @@ type profileService struct {
 func (s *profileService) FindById(id uint64) (*Profile, *reject.ProblemWithTrace) {
 	var profile Profile
 	result := s.db.
-		Table("user").
-		Joins("INNER JOIN user_block_inventory ON user.id = user_block_inventory.user_id").
-		Joins("INNER JOIN block ON user_block_inventory.block_id = block.id").
-		Joins("INNER JOIN custodial_wallet ON user.custodial_wallet_id = custodial_wallet.id").
-		Where("user.id = ?", id).
+		Table("battleblocks_user").
+		Joins("INNER JOIN user_block_inventory ON battleblocks_user.id = user_block_inventory.user_id").
+		Joins("INNER JOIN custodial_wallet ON battleblocks_user.custodial_wallet_id = custodial_wallet.id").
+		Where("battleblocks_user.id = ?", id).
 		Select(`
-			user.id, 
-			user.email,
-			user.username,
+			battleblocks_user.id, 
+			battleblocks_user.email,
+			battleblocks_user.username,
 			custodial_wallet.address AS custodial_wallet_address,
-			user.self_custody_wallet_address AS self_custody_wallet_address,
-			block.id AS block_id,
-			block.name AS block_name,
-			block.block_type AS block_type,
-			block.rarity AS block_rarity,
-			user_block_inventory.active AS block_active
+			battleblocks_user.self_custody_wallet_address AS self_custody_wallet_address
 		`).
 		Scan(&profile)
+
+	var userBlocksInventory []UserInventoryBlock
+	s.db.
+		Table("user_block_inventory").
+		Joins("INNER JOIN block ON user_block_inventory.block_id = block.id").
+		Where("user_block_inventory.user_id = ?", id).
+		Select(`
+			block.id AS id,
+			block.name AS name,
+			block.block_type AS type,
+			block.rarity AS rarity,
+			user_block_inventory.active AS active
+		`).
+		Scan(&userBlocksInventory)
 
 	if result.Error != nil {
 		return nil, &reject.ProblemWithTrace{
@@ -37,6 +45,8 @@ func (s *profileService) FindById(id uint64) (*Profile, *reject.ProblemWithTrace
 			Cause:   result.Error,
 		}
 	}
+
+	profile.InventoryBlocks = userBlocksInventory
 
 	return &profile, nil
 }

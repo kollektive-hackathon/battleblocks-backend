@@ -6,7 +6,7 @@ type Profile struct {
 	Username                 string               `json:"username"`
 	CustodialWalletAddress   string               `json:"custodialWalletAddress"`
 	SelfCustodyWalletAddress string               `json:"selfCustodyWalletAddress"`
-	InventoryBlocks          []UserInventoryBlock `gorm:"embedded,embeddedPrefix:block_" json:"inventoryBlocks"`
+	InventoryBlocks          []UserInventoryBlock `gorm:"-" json:"inventoryBlocks"`
 }
 
 type UserInventoryBlock struct {
