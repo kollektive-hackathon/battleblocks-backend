@@ -52,7 +52,7 @@ CREATE TABLE game
     time_started       TIMESTAMP WITH TIME ZONE,
     time_created       TIMESTAMP WITH TIME ZONE,
     time_limit_seconds INTEGER     NOT NULL,
-    winner             BIGINT      NOT NULL
+    winner             BIGINT
 );
 
 CREATE TABLE block_placement

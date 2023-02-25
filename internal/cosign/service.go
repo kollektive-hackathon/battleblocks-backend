@@ -81,7 +81,7 @@ func (cs *cosignService) validate(transaction *flow.Transaction, credentials aut
 	var custodialWallet model.CustodialWallet
 	result := cs.db.
 		Model(&custodialWallet).
-		Where("address = ? AND id = (SELECT custodial_wallet_id FROM user WHERE google_identity_id = ?)", address, userGoogleId).
+		Where("address = ? AND id = (SELECT custodial_wallet_id FROM battleblocks_user WHERE google_identity_id = ?)", address, userGoogleId).
 		First(&custodialWallet)
 
 	if result.Error != nil {
