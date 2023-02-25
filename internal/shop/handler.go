@@ -3,7 +3,6 @@ package shop
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
-	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
 	"gorm.io/gorm"
 	"net/http"
 )
@@ -24,7 +23,7 @@ func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 	routes.GET("/", middleware.VerifyAuthToken, handler.getShopList)
 
 	// TODO subscription ids
-	pubsub.Subscribe(pubsub.SubscriptionHandler{
+	/*pubsub.Subscribe(pubsub.SubscriptionHandler{
 		SubscriptionId: "",
 		Handler:        handler.shop.bridge.handleWithdrew,
 	})
@@ -39,7 +38,7 @@ func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 	pubsub.Subscribe(pubsub.SubscriptionHandler{
 		SubscriptionId: "",
 		Handler:        handler.shop.bridge.handleBurned,
-	})
+	})*/
 }
 
 func (h shopHandler) getShopList(c *gin.Context) {

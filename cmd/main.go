@@ -68,7 +68,7 @@ func setupApiRouter(db *gorm.DB) *gin.Engine {
 	middleware.RegisterGlobalMiddleware(apiRouter)
 
 	ws.RegisterRoutes(routerGroup)
-	auth.RegisterRoutes(routerGroup)
+	auth.RegisterRoutes(routerGroup, db)
 	registration.RegisterRoutesAndSubscriptions(routerGroup, db)
 	profile.RegisterRoutes(routerGroup, db)
 	shop.RegisterRoutesAndSubscriptions(routerGroup, db)
@@ -79,8 +79,9 @@ func setupApiRouter(db *gorm.DB) *gin.Engine {
 }
 
 func setupViper() {
-	viper.AutomaticEnv()
+	//viper.AutomaticEnv()
 	viper.SetConfigFile("./.env")
+	viper.ReadInConfig()
 }
 
 func setupZerolog() {

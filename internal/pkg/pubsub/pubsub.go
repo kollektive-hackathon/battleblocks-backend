@@ -6,14 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/rs/zerolog/log"
-	"os"
+	"github.com/spf13/viper"
 )
 
 var ctx context.Context
 var client *pubsub.Client
 
 func InitPubSub() {
-	projectID := os.Getenv("GOOGLE_PROJECT_ID")
+	projectID := viper.Get("GOOGLE_PROJECT_ID").(string)
 	if projectID == "" {
 		log.Fatal().Msg("Pub sub missing projectID to initialize")
 	}
