@@ -11,4 +11,5 @@ func CORS() gin.HandlerFunc {
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowHeaders: []string{"*"},
 	})
+
 }

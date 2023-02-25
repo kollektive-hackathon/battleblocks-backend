@@ -1,7 +1,9 @@
 package middleware
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
 func RegisterGlobalMiddleware(router *gin.Engine) {
-	router.Use(CORS())
+	router.Use(gin.Recovery(), CORS())
 }

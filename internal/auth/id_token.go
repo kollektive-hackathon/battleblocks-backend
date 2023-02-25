@@ -107,18 +107,18 @@ func (ah authHandler) getIdentityPlatformTokenFromProviderIDToken(c *gin.Context
 
 		var p profile.Profile
 		result := ah.db.
-			Table("user").
-			Joins("INNER JOIN custodial_wallet ON user.custodial_wallet_id = custodial_wallet.id").
-			Where("user.email = ?", resBody.Email).
+			Table("battleblocks_user").
+			Joins("INNER JOIN custodial_wallet ON battleblocks_user.custodial_wallet_id = custodial_wallet.id").
+			Where("battleblocks_user.email = ?", resBody.Email).
 			Select(`
-			user.id, 
-			user.email,
-			user.username,
+			battleblocks_user.id,
+			battleblocks_user.email,
+			battleblocks_user.username,
 			custodial_wallet.address AS custodial_wallet_address,
-			user.self_custody_wallet_address AS self_custody_wallet_address
+			battleblocks_user.self_custody_wallet_address AS self_custody_wallet_address
 		`).Scan(&p)
 
-		if result.Error == nil {
+		if result.Error == nil && p.Id != 0 {
 			resBody.Profile = &p
 		}
 

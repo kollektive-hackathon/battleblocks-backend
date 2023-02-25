@@ -42,6 +42,8 @@ func main() {
 	}
 
 	server.ListenAndServe()
+	for {
+	}
 }
 
 func setupDb() *gorm.DB {
@@ -63,9 +65,8 @@ func setupDb() *gorm.DB {
 
 func setupApiRouter(db *gorm.DB) *gin.Engine {
 	apiRouter := gin.Default()
-	routerGroup := apiRouter.Group("/battleblocks-api")
-
 	middleware.RegisterGlobalMiddleware(apiRouter)
+	routerGroup := apiRouter.Group("/battleblocks-api")
 
 	ws.RegisterRoutes(routerGroup)
 	auth.RegisterRoutes(routerGroup, db)
