@@ -16,6 +16,12 @@ type AccountCreated struct {
 	Address   string `json:"address"`
 }
 
+type AccountDelegated struct {
+	PublicKey           string `json:"originatingPublicKey"`
+	CustodialAddress    string `json:"address"`
+	NonCustodialAddress string `json:"parent"`
+}
+
 type accountContractBridge struct {
 	db *gorm.DB
 }
@@ -44,6 +50,27 @@ func (b *accountContractBridge) handleCustodialAccountCreated(_ context.Context,
 		Model(&model.CustodialWallet{}).
 		Where("public_key = ?", messagePayload.PublicKey).
 		Update("address", messagePayload.Address)
+
+	if result.Error != nil {
+		log.Warn().Err(result.Error).Msg("Error while handling AccountCreated")
+		return
+	}
+
+	message.Ack()
+}
+
+func (b *accountContractBridge) handleCustodialAccountDelegated(_ context.Context, message *gcppubsub.Message) {
+	log.Info().Msg("Received message payload " + string(message.Data))
+	messagePayload, err := utils.JsonDecodeByteStream[AccountDelegated](message.Data)
+	if err != nil {
+		log.Warn().Err(err).Msg("Error while parsing AccountDelegated message")
+		return
+	}
+
+	result := b.db.
+		Model(&model.User{}).
+		Where("custodial_wallet_id = (SELECT id FROM custodial_wallet WHERE address = ?)", messagePayload.CustodialAddress).
+		Update("self_custody_wallet_address", messagePayload.NonCustodialAddress)
 
 	if result.Error != nil {
 		log.Warn().Err(result.Error).Msg("Error while handling AccountCreated")

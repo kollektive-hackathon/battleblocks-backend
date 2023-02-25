@@ -53,7 +53,7 @@ func (s *profileService) FindById(id uint64) (*Profile, *reject.ProblemWithTrace
 
 func (s *profileService) activateBlocks(userId uint64, body ActivateBlocksRequest) *reject.ProblemWithTrace {
 	err := s.db.Transaction(func(tx *gorm.DB) error {
-		result := s.db.Exec(
+		result := tx.Exec(
 			`UPDATE user_block_inventory 
                     SET active = true 
                   WHERE block_id IN ? 
@@ -63,7 +63,7 @@ func (s *profileService) activateBlocks(userId uint64, body ActivateBlocksReques
 			return result.Error
 		}
 
-		result = s.db.Exec(
+		result = tx.Exec(
 			`UPDATE user_block_inventory 
                     SET active = false 
                   WHERE block_id NOT IN ? 
