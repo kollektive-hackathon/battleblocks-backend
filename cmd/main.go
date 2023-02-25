@@ -25,10 +25,10 @@ import (
 func main() {
 	setupViper()
 	setupZerolog()
+	pubsub.InitPubSub()
 	db := setupDb()
 	apiRouter := setupApiRouter(db)
 
-	pubsub.InitPubSub()
 	defer func() { pubsub.CloseClient() }()
 
 	firebase.InitFirebaseSdk()
