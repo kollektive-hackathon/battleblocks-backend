@@ -34,10 +34,9 @@ func (gs *gameService) getGames(page utils.PageRequest, userId string) ([]model.
 			Offset(page.Offset).
 			Clauses(clause.OrderBy{
 				Expression: clause.Expr{
-					SQL:
-					"(owner_id = $1 AND game_status = 'PLAYING') DESC, (owner_id = $1) DESC, time_created DESC",
-					Vars: []interface{}{userId},
-				WithoutParentheses: true,
+					SQL:                "(owner_id = $1 AND game_status = 'PLAYING') DESC, (owner_id = $1) DESC, time_created DESC",
+					Vars:               []interface{}{userId},
+					WithoutParentheses: true,
 				},
 			}).
 			Scan(&games)
@@ -64,4 +63,21 @@ func (gs *gameService) getGames(page utils.PageRequest, userId string) ([]model.
 func (gs *gameService) createGame(game model.Game) *reject.ProblemWithTrace {
 	// TODO Send tx for creating game with the model
 	return nil
+}
+
+func (gs *gameService) getMoves(id uint64) ([]model.MoveHistory, *reject.ProblemWithTrace) {
+	var moves []model.MoveHistory
+	result := gs.db.
+		Model(&model.MoveHistory{}).
+		Where("game_id = ?", id).
+		Find(&moves)
+
+	if result.Error != nil {
+		return nil, &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(result.Error),
+			Cause:   result.Error,
+		}
+	}
+
+	return moves, nil
 }

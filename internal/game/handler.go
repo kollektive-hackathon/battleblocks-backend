@@ -2,6 +2,7 @@ package game
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
@@ -24,6 +25,29 @@ func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 	// routes.GET("/", handler.getGames)
 	routes.POST("/", middleware.VerifyAuthToken, handler.createGame)
 	routes.GET("/", middleware.VerifyAuthToken, handler.getGames)
+
+	routes.GET("/:id/moves", middleware.VerifyAuthToken, handler.getMoves)
+	routes.POST("/:id/moves", middleware.VerifyAuthToken, handler.playMove)
+}
+
+func (gh *gameHandler) getMoves(c *gin.Context) {
+	gameId, parseErr := strconv.ParseUint(c.Param("id"), 0, 64)
+	if parseErr != nil {
+		c.JSON(http.StatusBadRequest, reject.RequestParamsProblem())
+		return
+	}
+
+	moves, err := gh.gameService.getMoves(gameId)
+	if err != nil {
+		c.JSON(err.Problem.Status, err.Problem)
+		return
+	}
+
+	c.JSON(http.StatusOK, moves)
+}
+
+func (gh *gameHandler) playMove(c *gin.Context) {
+	// TODO
 }
 
 func (gh *gameHandler) getGames(c *gin.Context) {

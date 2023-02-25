@@ -53,7 +53,6 @@ CREATE TABLE game
     stake              BIGINT      NOT NULL,
     time_started       TIMESTAMP WITH TIME ZONE,
     time_created       TIMESTAMP WITH TIME ZONE,
-    time_limit_seconds INTEGER     NOT NULL,
     winner             BIGINT
 );
 
