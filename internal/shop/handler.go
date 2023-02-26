@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
-	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
 	"gorm.io/gorm"
 )
 
@@ -16,7 +15,7 @@ type shopHandler struct {
 func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 	handler := shopHandler{
 		shop: shopService{
-			db:     db,
+			db: db,
 			bridge: &nftContractBridge{
 				db: db,
 			},
@@ -28,20 +27,20 @@ func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 
 	// TODO subscription ids
 	// pubsub.Subscribe(pubsub.SubscriptionHandler{
-		// SubscriptionId: "",
-		// Handler:        handler.shop.bridge.handleWithdrew,
+	// SubscriptionId: "",
+	// Handler:        handler.shop.bridge.handleWithdrew,
 	// })
-	go pubsub.Subscribe(pubsub.SubscriptionHandler{
+	/*go pubsub.Subscribe(pubsub.SubscriptionHandler{
 		SubscriptionId: "blockchain.flow.events.minted",
 		Handler:        handler.shop.bridge.handleMinted,
-	})
+	})*/
 	// pubsub.Subscribe(pubsub.SubscriptionHandler{
-		// SubscriptionId: "",
-		// Handler:        handler.shop.bridge.handleDeposited,
+	// SubscriptionId: "",
+	// Handler:        handler.shop.bridge.handleDeposited,
 	// })
 	// pubsub.Subscribe(pubsub.SubscriptionHandler{
-		// SubscriptionId: "",
-		// Handler:        handler.shop.bridge.handleBurned,
+	// SubscriptionId: "",
+	// Handler:        handler.shop.bridge.handleBurned,
 	// })
 }
 
