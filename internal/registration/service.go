@@ -23,7 +23,7 @@ func (s *registrationService) register(username string, email string, googleIden
 		return &reject.ProblemWithTrace{Problem: reject.UnexpectedProblem(err), Cause: err}
 	}
 
-	publicKey := accountKey.PublicKey.String()
+	publicKey := accountKey.PublicKey.String()[2:]
 
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		cw := model.CustodialWallet{
