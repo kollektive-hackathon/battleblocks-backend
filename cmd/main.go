@@ -34,9 +34,8 @@ func main() {
 
 	firebase.InitFirebaseSdk()
 
-	port := viper.Get("PORT").(string)
 	server := &http.Server{
-		Addr:         port,
+		Addr:         ":8000",
 		Handler:      apiRouter,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
