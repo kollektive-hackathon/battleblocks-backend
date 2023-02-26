@@ -42,7 +42,10 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	server.ListenAndServe()
+	err := server.ListenAndServe()
+	if err != nil {
+		log.Warn().Interface("err", err.Error()).Msg("Could not start server")
+	}
 }
 
 func setupDb() *gorm.DB {
