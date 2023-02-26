@@ -66,13 +66,14 @@ func setupDb() *gorm.DB {
 
 func setupApiRouter(db *gorm.DB) *gin.Engine {
 	apiRouter := gin.Default()
-	middleware.RegisterGlobalMiddleware(apiRouter)
-	routerGroup := apiRouter.Group("/api")
 
 	// gcp health check
-	routerGroup.GET("/", func(c *gin.Context) {
+	apiRouter.GET("/", func(c *gin.Context) {
 		c.Status(http.StatusOK)
 	})
+
+	middleware.RegisterGlobalMiddleware(apiRouter)
+	routerGroup := apiRouter.Group("/api")
 
 	ws.RegisterRoutes(routerGroup)
 	auth.RegisterRoutes(routerGroup, db)
