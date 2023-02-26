@@ -43,8 +43,6 @@ func main() {
 	}
 
 	server.ListenAndServe()
-	for {
-	}
 }
 
 func setupDb() *gorm.DB {
