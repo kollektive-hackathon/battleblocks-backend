@@ -69,6 +69,11 @@ func setupApiRouter(db *gorm.DB) *gin.Engine {
 	middleware.RegisterGlobalMiddleware(apiRouter)
 	routerGroup := apiRouter.Group("/api")
 
+	// gcp health check
+	routerGroup.GET("/", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+
 	ws.RegisterRoutes(routerGroup)
 	auth.RegisterRoutes(routerGroup, db)
 	paypal.RegisterRoutes(routerGroup)
