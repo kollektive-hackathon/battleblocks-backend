@@ -26,7 +26,7 @@ func RegisterRoutes(rg *gin.RouterGroup) {
 
 	routes := rg.Group("/ws")
 	routes.GET("/game/:id", middleware.VerifyAuthToken, handler.serveGameWs)
-	routes.GET("/game/:id", middleware.VerifyAuthToken, handler.serveRegistrationWs)
+	routes.GET("/registration", middleware.VerifyAuthToken, handler.serveRegistrationWs)
 }
 
 func (wsh *wsHandler) serveGameWs(c *gin.Context) {
