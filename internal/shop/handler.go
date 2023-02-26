@@ -1,6 +1,7 @@
 package shop
 
 import (
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -30,10 +31,10 @@ func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 	// SubscriptionId: "",
 	// Handler:        handler.shop.bridge.handleWithdrew,
 	// })
-	/*go pubsub.Subscribe(pubsub.SubscriptionHandler{
+	go pubsub.Subscribe(pubsub.SubscriptionHandler{
 		SubscriptionId: "blockchain.flow.events.minted",
 		Handler:        handler.shop.bridge.handleMinted,
-	})*/
+	})
 	// pubsub.Subscribe(pubsub.SubscriptionHandler{
 	// SubscriptionId: "",
 	// Handler:        handler.shop.bridge.handleDeposited,
