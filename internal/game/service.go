@@ -65,11 +65,11 @@ func (gs *gameService) createGame(game model.Game) *reject.ProblemWithTrace {
 	return nil
 }
 
-func (gs *gameService) getMoves(id uint64) ([]model.MoveHistory, *reject.ProblemWithTrace) {
+func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHistory, *reject.ProblemWithTrace) {
 	var moves []model.MoveHistory
 	result := gs.db.
 		Model(&model.MoveHistory{}).
-		Where("game_id = ?", id).
+		Where("game_id = ? AND user_id = (SELECT id FROM battleblocks_user WHERE email = ?) ORDER BY played_at", gameId, userEmail).
 		Find(&moves)
 
 	if result.Error != nil {

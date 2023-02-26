@@ -3,10 +3,13 @@ package registration
 import (
 	gcppubsub "cloud.google.com/go/pubsub"
 	"context"
+	"fmt"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/blockchain"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/ws"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/profile"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
@@ -23,7 +26,8 @@ type AccountDelegated struct {
 }
 
 type accountContractBridge struct {
-	db *gorm.DB
+	db              *gorm.DB
+	notificationHub *ws.WebSocketNotificationHub
 }
 
 func (b *accountContractBridge) createCustodialAccount(publicKey string) {
@@ -57,6 +61,27 @@ func (b *accountContractBridge) handleCustodialAccountCreated(_ context.Context,
 	}
 
 	message.Ack()
+
+	var p profile.Profile
+	result = b.db.
+		Table("battleblocks_user").
+		Joins("INNER JOIN user_block_inventory ON battleblocks_user.id = user_block_inventory.user_id").
+		Joins("INNER JOIN custodial_wallet ON battleblocks_user.custodial_wallet_id = custodial_wallet.id").
+		Where("custodial_wallet.address = ?", messagePayload.Address).
+		Select(`
+			battleblocks_user.id, 
+			battleblocks_user.email,
+			battleblocks_user.username,
+			custodial_wallet.address AS custodial_wallet_address,
+			battleblocks_user.self_custody_wallet_address AS self_custody_wallet_address
+		`).
+		Scan(&p)
+
+	if result.Error != nil {
+		log.Warn().Err(result.Error).Msg("Cannot fetch profile on AccountCreated event")
+	}
+
+	b.notificationHub.Publish(fmt.Sprintf("registration/%s", p.Email), p)
 }
 
 func (b *accountContractBridge) handleCustodialAccountDelegated(_ context.Context, message *gcppubsub.Message) {

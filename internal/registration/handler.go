@@ -6,6 +6,7 @@ import (
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/ws"
 	"gorm.io/gorm"
 	"net/http"
 	"strings"
@@ -18,8 +19,11 @@ type registrationHandler struct {
 func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 	handler := registrationHandler{
 		registration: registrationService{
-			db:     db,
-			bridge: &accountContractBridge{db},
+			db: db,
+			bridge: &accountContractBridge{
+				db:              db,
+				notificationHub: ws.NewNotificationHub(),
+			},
 		},
 	}
 

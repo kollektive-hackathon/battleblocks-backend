@@ -25,6 +25,13 @@ func (s *profileService) FindById(id uint64) (*Profile, *reject.ProblemWithTrace
 		`).
 		Scan(&profile)
 
+	if result.Error != nil {
+		return nil, &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(result.Error),
+			Cause:   result.Error,
+		}
+	}
+
 	var userBlocksInventory []UserInventoryBlock
 	s.db.
 		Table("user_block_inventory").

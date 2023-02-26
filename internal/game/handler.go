@@ -37,7 +37,7 @@ func (gh *gameHandler) getMoves(c *gin.Context) {
 		return
 	}
 
-	moves, err := gh.gameService.getMoves(gameId)
+	moves, err := gh.gameService.getMoves(gameId, utils.GetUserEmail(c))
 	if err != nil {
 		c.JSON(err.Problem.Status, err.Problem)
 		return
