@@ -1,10 +1,12 @@
 package shop
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
 	"gorm.io/gorm"
-	"net/http"
 )
 
 type shopHandler struct {
@@ -15,7 +17,9 @@ func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 	handler := shopHandler{
 		shop: shopService{
 			db:     db,
-			bridge: &nftContractBridge{},
+			bridge: &nftContractBridge{
+				db: db,
+			},
 		},
 	}
 
@@ -23,22 +27,22 @@ func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 	routes.GET("/", middleware.VerifyAuthToken, handler.getShopList)
 
 	// TODO subscription ids
-	/*pubsub.Subscribe(pubsub.SubscriptionHandler{
-		SubscriptionId: "",
-		Handler:        handler.shop.bridge.handleWithdrew,
-	})
-	pubsub.Subscribe(pubsub.SubscriptionHandler{
-		SubscriptionId: "",
+	// pubsub.Subscribe(pubsub.SubscriptionHandler{
+		// SubscriptionId: "",
+		// Handler:        handler.shop.bridge.handleWithdrew,
+	// })
+	go pubsub.Subscribe(pubsub.SubscriptionHandler{
+		SubscriptionId: "blockchain.flow.events.minted",
 		Handler:        handler.shop.bridge.handleMinted,
 	})
-	pubsub.Subscribe(pubsub.SubscriptionHandler{
-		SubscriptionId: "",
-		Handler:        handler.shop.bridge.handleDeposited,
-	})
-	pubsub.Subscribe(pubsub.SubscriptionHandler{
-		SubscriptionId: "",
-		Handler:        handler.shop.bridge.handleBurned,
-	})*/
+	// pubsub.Subscribe(pubsub.SubscriptionHandler{
+		// SubscriptionId: "",
+		// Handler:        handler.shop.bridge.handleDeposited,
+	// })
+	// pubsub.Subscribe(pubsub.SubscriptionHandler{
+		// SubscriptionId: "",
+		// Handler:        handler.shop.bridge.handleBurned,
+	// })
 }
 
 func (h shopHandler) getShopList(c *gin.Context) {

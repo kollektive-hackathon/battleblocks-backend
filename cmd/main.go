@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/paypal"
 	"net/http"
 	"time"
 
@@ -70,6 +71,7 @@ func setupApiRouter(db *gorm.DB) *gin.Engine {
 
 	ws.RegisterRoutes(routerGroup)
 	auth.RegisterRoutes(routerGroup, db)
+	paypal.RegisterRoutes(routerGroup)
 	registration.RegisterRoutesAndSubscriptions(routerGroup, db)
 	profile.RegisterRoutes(routerGroup, db)
 	shop.RegisterRoutesAndSubscriptions(routerGroup, db)

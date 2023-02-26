@@ -1,14 +1,28 @@
 package shop
 
 import (
-	gcppubsub "cloud.google.com/go/pubsub"
 	"context"
+	"encoding/json"
+	"errors"
+	"strconv"
+	"time"
+
+	gcppubsub "cloud.google.com/go/pubsub"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/blockchain"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
+	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 )
 
+type MintedEvent struct {
+	To   string `json:"to"`
+	Name string `json:"name"`
+	Id   string `json:"id"`
+}
+
 type nftContractBridge struct {
+	db *gorm.DB
 }
 
 func (b *nftContractBridge) mint(recipientAddress, block model.Block, authorizers []blockchain.Authorizer) {
@@ -58,11 +72,59 @@ func (b *nftContractBridge) burn(id uint64, authorizers []blockchain.Authorizer)
 
 // TODO implement consumers
 func (b *nftContractBridge) handleWithdrew(_ context.Context, _ *gcppubsub.Message) {
-
 }
 
-func (b *nftContractBridge) handleMinted(_ context.Context, _ *gcppubsub.Message) {
+func (b *nftContractBridge) handleMinted(_ context.Context, m *gcppubsub.Message) {
+	var eventData MintedEvent
+	err := json.Unmarshal(m.Data, &eventData)
 
+	if err != nil {
+		log.Warn().Msg("Could not unmarshal minted event data")
+		return
+	}
+
+	err = b.db.Transaction(func(tx *gorm.DB) error {
+		var block model.Block
+		f := tx.Table("block").Where("name = ?", eventData.Name).First(&block)
+		if f.Error != nil {
+			log.Warn().Msg("error fetching block to transfer to user")
+			return errors.New("error fetching block to transfer to user")
+		}
+
+		var user model.User
+		f = tx.Raw(`SELECT bu.* FROM
+			battleblocks_user bu LEFT JOIN
+			custodial_wallet cw ON bu.custodial_wallet_id = cw.id
+			WHERE cw.address = ?`, eventData.To).First(&user)
+		if f.Error != nil {
+			log.Warn().Msg("error fetching user to transfer to ")
+			return errors.New("error fetching user to transfer to ")
+		}
+
+		// Insert NFT on user with TO
+		// Insert NFT purchase history
+		flowId, _ := strconv.ParseUint(eventData.Id, 10, 64)
+		nft := model.Nft{
+			FlowId:  flowId,
+			BlockId: block.Id,
+		}
+		tx.Table("nft").Create(&nft)
+
+		nft_history := model.NftPurchaseHistory{
+			NftId:       nft.Id,
+			BuyerId:     user.Id,
+			PurchasedAt: time.Now(),
+		}
+
+		tx.Table("nft_purchase_history").Create(&nft_history)
+
+		return nil
+	})
+	if err != nil {
+		log.Info().Interface("ev", eventData).Msg("Could not handle mitned event")
+		return
+	}
+	m.Ack()
 }
 
 func (b *nftContractBridge) handleDeposited(_ context.Context, _ *gcppubsub.Message) {

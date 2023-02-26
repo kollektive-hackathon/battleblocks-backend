@@ -69,6 +69,7 @@ require (
 	github.com/onflow/flow-go/crypto v0.24.4 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/plutov/paypal/v4 v4.7.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.2.1-0.20211004051800-57c86be7915a // indirect
 	github.com/spf13/afero v1.9.3 // indirect

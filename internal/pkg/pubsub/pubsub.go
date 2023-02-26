@@ -17,6 +17,7 @@ func InitPubSub() {
 	if projectID == "" {
 		log.Fatal().Msg("Pub sub missing projectID to initialize")
 	}
+	fmt.Printf("Init pubsub with projectID:%v", projectID)
 	ctx = context.Background()
 	var err error
 	client, err = pubsub.NewClient(ctx, projectID)
