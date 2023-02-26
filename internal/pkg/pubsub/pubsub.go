@@ -29,7 +29,7 @@ func InitPubSub() {
 
 func Subscribe(subscriptionHandler SubscriptionHandler) {
 	sub := client.Subscription(subscriptionHandler.SubscriptionId)
-	err := sub.Receive(ctx, subscriptionHandler.Handler)
+	err := sub.Receive(context.Background(), subscriptionHandler.Handler)
 	if err != nil {
 		log.Error().Err(err).Msg(fmt.Sprintf("Subscriber error for sub id %s", subscriptionHandler.SubscriptionId))
 	}
