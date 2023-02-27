@@ -36,11 +36,6 @@ func GetUserEmail(ctx *gin.Context) string {
 	return token.Claims[emailClaimKey].(string)
 }
 
-func GetUserId(ctx *gin.Context) string {
-	token := GetAccessToken(ctx)
-	return token.Claims[userIdCtxKey].(string)
-}
-
 func GetUserExternalId(ctx *gin.Context) string {
 	token := GetAccessToken(ctx)
 	return token.Subject

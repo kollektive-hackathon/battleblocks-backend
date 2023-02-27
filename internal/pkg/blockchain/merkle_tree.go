@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
-	"time"
 
 	mtreeOld "github.com/cbergoon/merkletree"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
@@ -44,7 +43,7 @@ func CreateMerkleTreeNode(x, y int32, present bool, nonce string) string {
 	if present {
 		sp = 1
 	}
-	return fmt.Sprintf("%v%v%v%v", sp, x, y, nonce) // TODO randomString(4)
+	return fmt.Sprintf("%v%v%v%v", sp, x, y, nonce)
 }
 
 func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64]model.Block) (*merkletree.MerkleTree, error) {
@@ -52,7 +51,7 @@ func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64
 
 	for i := 0; i < 10; i++ {
 		for j := 0; j < 10; j++ {
-			nodeInStr := CreateMerkleTreeNode(int32(i), int32(j), true, randomString(4))
+			nodeInStr := CreateMerkleTreeNode(int32(i), int32(j), true, randomString())
 			li[i][j] = nodeInStr
 		}
 	}
@@ -65,13 +64,13 @@ func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64
 
 		for _, single := range firstRow {
 			singleNr, _ := strconv.ParseUint(string(single), 10, 32)
-			nodeInStr := CreateMerkleTreeNode(int32(placement.X)+(int32(singleNr)-1), int32(placement.Y), true, randomString(4))
+			nodeInStr := CreateMerkleTreeNode(int32(placement.X)+(int32(singleNr)-1), int32(placement.Y), true, randomString())
 			li[int32(placement.X)+int32(singleNr)][int32(placement.Y)] = nodeInStr
 		}
 
 		for _, single := range secondRow {
 			singleNr, _ := strconv.ParseUint(string(single), 10, 32)
-			nodeInStr := CreateMerkleTreeNode(int32(placement.X), int32(placement.Y)+(int32(singleNr)-1), true, randomString(4))
+			nodeInStr := CreateMerkleTreeNode(int32(placement.X), int32(placement.Y)+(int32(singleNr)-1), true, randomString())
 			li[int32(placement.X)][int32(placement.Y)+int32(singleNr)] = nodeInStr
 		}
 	}
@@ -157,9 +156,6 @@ func getStringInBetween(str string, start string, end string) (result string) {
 	return str[s : s+e]
 }
 
-func randomString(length int) string {
-	rand.Seed(time.Now().UnixNano())
-	b := make([]byte, length+2)
-	rand.Read(b)
-	return fmt.Sprintf("%x", b)[2 : length+2]
+func randomString() string {
+	return fmt.Sprintf("%05d",rand.Intn(10000))
 }
