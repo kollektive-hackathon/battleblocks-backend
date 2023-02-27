@@ -1,6 +1,8 @@
 package game
 
 import (
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/ws"
 	"net/http"
 	"strconv"
 
@@ -21,7 +23,8 @@ func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 		gameService: &gameService{
 			db: db,
 			gameContractBridge: &gameContractBridge{
-				db: db,
+				db:              db,
+				notificationHub: ws.NewNotificationHub(),
 			},
 		},
 	}
@@ -32,6 +35,26 @@ func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 
 	routes.GET("/:id/moves", middleware.VerifyAuthToken, handler.getMoves)
 	routes.POST("/:id/moves", middleware.VerifyAuthToken, handler.playMove)
+
+	go pubsub.Subscribe(pubsub.SubscriptionHandler{
+		SubscriptionId: "blockchain.flow.events.move-done-sub",
+		Handler:        handler.gameService.gameContractBridge.handleMoved,
+	})
+
+	go pubsub.Subscribe(pubsub.SubscriptionHandler{
+		SubscriptionId: "blockchain.flow.events.game-created-sub",
+		Handler:        handler.gameService.gameContractBridge.handleGameCreated,
+	})
+
+	go pubsub.Subscribe(pubsub.SubscriptionHandler{
+		SubscriptionId: "blockchain.flow.events.challenger-joined-sub",
+		Handler:        handler.gameService.gameContractBridge.handleChallengerJoined,
+	})
+
+	go pubsub.Subscribe(pubsub.SubscriptionHandler{
+		SubscriptionId: "blockchain.flow.events.game-over-sub",
+		Handler:        handler.gameService.gameContractBridge.handleGameOver,
+	})
 }
 
 func (gh *gameHandler) getMoves(c *gin.Context) {

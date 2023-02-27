@@ -2,8 +2,10 @@ package game
 
 import (
 	"context"
+	"fmt"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/blockchain"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/ws"
 	"time"
 
 	gcppubsub "cloud.google.com/go/pubsub"
@@ -37,7 +39,8 @@ type GameCreated struct {
 }
 
 type gameContractBridge struct {
-	db *gorm.DB
+	db              *gorm.DB
+	notificationHub *ws.WebSocketNotificationHub
 }
 
 func (b *gameContractBridge) sendCreateGameTx(stake float32, rootMerkel string, userAuthorizer blockchain.Authorizer) {
@@ -102,6 +105,38 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 	}
 
 	message.Ack()
+
+	var isHit bool
+	result = b.db.
+		Raw(`
+			SELECT EXISTS(
+				SELECT 1 
+				FROM game_grid_point 
+				WHERE game_id = ? 
+				  AND coordinate_x = ? 
+				  AND coordinate_y = ? 
+				  AND block_present = true);
+        `, messagePayload.GameId, messagePayload.X, messagePayload.Y).
+		Scan(&isHit)
+
+	if result.Error != nil {
+		log.Warn().Err(result.Error).Msg("Cannot fetch isHit for player move")
+		// should have proper ws error signal implemented
+		// but not necessary for this poc
+		isHit = false
+	}
+
+	wsEvent := map[string]any{
+		"type": "MOVE_DONE",
+		"payload": map[string]any{
+			"gameId": messagePayload.GameId,
+			"userId": messagePayload.PlayerId,
+			"x":      messagePayload.X,
+			"y":      messagePayload.Y,
+			"isHit":  isHit,
+		},
+	}
+	b.notificationHub.Publish(fmt.Sprintf("game/%d", messagePayload.GameId), wsEvent)
 }
 
 func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppubsub.Message) {
@@ -128,6 +163,20 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 	}
 
 	message.Ack()
+
+	wsEvent := map[string]any{
+		"type": "GAME_CREATED",
+		"payload": map[string]any{
+			"gameId":    messagePayload.GameId,
+			"creatorId": messagePayload.CreatorId,
+			"stake":     messagePayload.Stake,
+		},
+	}
+	b.notificationHub.Publish(fmt.Sprintf("game/%d", messagePayload.GameId), wsEvent)
+}
+
+func (b *gameContractBridge) handleChallengerJoined(_ context.Context, _ *gcppubsub.Message) {
+	// TODO when joined command done
 }
 
 func (b *gameContractBridge) handleGameOver(_ context.Context, message *gcppubsub.Message) {
@@ -152,4 +201,13 @@ func (b *gameContractBridge) handleGameOver(_ context.Context, message *gcppubsu
 	}
 
 	message.Ack()
+
+	wsEvent := map[string]any{
+		"type": "GAME_OVER",
+		"payload": map[string]any{
+			"gameId":   messagePayload.GameId,
+			"winnerId": messagePayload.Winner,
+		},
+	}
+	b.notificationHub.Publish(fmt.Sprintf("game/%d", messagePayload.GameId), wsEvent)
 }

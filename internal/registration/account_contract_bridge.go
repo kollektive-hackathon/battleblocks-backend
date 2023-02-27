@@ -81,7 +81,11 @@ func (b *accountContractBridge) handleCustodialAccountCreated(_ context.Context,
 		log.Warn().Err(result.Error).Msg("Cannot fetch profile on AccountCreated event")
 	}
 
-	b.notificationHub.Publish(fmt.Sprintf("registration/%s", p.Email), p)
+	wsEvent := map[string]any{
+		"type":    "ACCOUNT_CREATED",
+		"payload": p,
+	}
+	b.notificationHub.Publish(fmt.Sprintf("registration/%s", p.Email), wsEvent)
 }
 
 func (b *accountContractBridge) handleCustodialAccountDelegated(_ context.Context, message *gcppubsub.Message) {

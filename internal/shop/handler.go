@@ -30,23 +30,10 @@ func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 	routes.GET("", middleware.VerifyAuthToken, handler.getShopList)
 	routes.POST("/pp", handler.paypalWebhook)
 
-	// TODO subscription ids
-	// pubsub.Subscribe(pubsub.SubscriptionHandler{
-	// SubscriptionId: "",
-	// Handler:        handler.shop.bridge.handleWithdrew,
-	// })
 	go pubsub.Subscribe(pubsub.SubscriptionHandler{
 		SubscriptionId: "blockchain.flow.events.minted",
 		Handler:        handler.shop.bridge.handleMinted,
 	})
-	// pubsub.Subscribe(pubsub.SubscriptionHandler{
-	// SubscriptionId: "",
-	// Handler:        handler.shop.bridge.handleDeposited,
-	// })
-	// pubsub.Subscribe(pubsub.SubscriptionHandler{
-	// SubscriptionId: "",
-	// Handler:        handler.shop.bridge.handleBurned,
-	// })
 }
 
 func (h shopHandler) getShopList(c *gin.Context) {

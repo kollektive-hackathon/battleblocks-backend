@@ -38,10 +38,10 @@ func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 		Handler:        handler.registration.bridge.handleCustodialAccountCreated,
 	})
 
-	/*go pubsub.Subscribe(pubsub.SubscriptionHandler{
+	go pubsub.Subscribe(pubsub.SubscriptionHandler{
 		SubscriptionId: "blockchain.flow.events.account-delegated-sub",
 		Handler:        handler.registration.bridge.handleCustodialAccountDelegated,
-	})*/
+	})
 }
 
 type RegistrationRequest struct {
