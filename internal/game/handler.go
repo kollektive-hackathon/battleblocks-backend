@@ -23,8 +23,8 @@ func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 
 	routes := rg.Group("/game")
 	// routes.GET("/", handler.getGames)
-	routes.POST("/", middleware.VerifyAuthToken, handler.createGame)
-	routes.GET("/", middleware.VerifyAuthToken, handler.getGames)
+	routes.POST("", middleware.VerifyAuthToken, handler.createGame)
+	routes.GET("", middleware.VerifyAuthToken, handler.getGames)
 
 	routes.GET("/:id/moves", middleware.VerifyAuthToken, handler.getMoves)
 	routes.POST("/:id/moves", middleware.VerifyAuthToken, handler.playMove)

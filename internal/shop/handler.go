@@ -24,7 +24,7 @@ func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 	}
 
 	routes := rg.Group("/shop")
-	routes.GET("/", middleware.VerifyAuthToken, handler.getShopList)
+	routes.GET("", middleware.VerifyAuthToken, handler.getShopList)
 
 	// TODO subscription ids
 	// pubsub.Subscribe(pubsub.SubscriptionHandler{

@@ -24,7 +24,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 	}
 
 	routes := rg.Group("/cosign")
-	routes.POST("/", middleware.VerifyAuthToken, handler.handleCosign)
+	routes.POST("", middleware.VerifyAuthToken, handler.handleCosign)
 }
 
 func (ch cosignHandler) handleCosign(c *gin.Context) {

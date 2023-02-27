@@ -28,7 +28,7 @@ func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 	}
 
 	routes := rg.Group("/registration")
-	routes.POST("/", middleware.VerifyAuthToken, handler.register)
+	routes.POST("", middleware.VerifyAuthToken, handler.register)
 
 	go pubsub.Subscribe(pubsub.SubscriptionHandler{
 		SubscriptionId: "blockchain.flow.events.account-created-sub",
