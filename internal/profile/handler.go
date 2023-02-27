@@ -21,7 +21,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 	}
 
 	routes := rg.Group("/profile")
-	routes.GET("/", middleware.VerifyAuthToken, handler.getProfile)
+	routes.GET("", middleware.VerifyAuthToken, handler.getProfile)
 	routes.PUT("/:id/blocks", middleware.VerifyAuthToken, handler.activateBlock)
 }
 
