@@ -28,13 +28,13 @@ type gameService struct {
 	gameContractBridge *gameContractBridge
 }
 
-func (gs *gameService) getGames(page utils.PageRequest, googleUserId string) ([]model.Game, *int64, *reject.ProblemWithTrace) {
+func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]model.Game, *int64, *reject.ProblemWithTrace) {
 	games := []model.Game{}
 	gamesSize := int64(0)
 
 	err := gs.db.Transaction(func(tx *gorm.DB) error {
 		var userId string
-		f := tx.Raw("SELECT u.id FROM battleblocks_user WHERE google_identity_id = ?", googleUserId).First(&userId)
+		f := tx.Raw("SELECT u.id FROM battleblocks_user WHERE email = ?", userEmail).First(&userId)
 		if f.Error != nil {
 			return f.Error
 		}
@@ -79,7 +79,7 @@ func (gs *gameService) getGames(page utils.PageRequest, googleUserId string) ([]
 //TODO:
 // Na svakom Moveu kreirati merkeltree ponovo iz block placementa i dobiti PROOF
 
-func (gs *gameService) createGame(createGame CreateGameRequest, googleUserId string) *reject.ProblemWithTrace {
+func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string) *reject.ProblemWithTrace {
 	// TODO Send tx for creating game with the model
 	// Spremiti u bazu game sa prizeom koji prima
 
@@ -89,7 +89,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, googleUserId str
 
 	err := gs.db.Transaction(func(tx *gorm.DB) error {
 		var userId string
-		f := tx.Raw("SELECT u.id FROM battleblocks_user WHERE google_identity_id = ?", googleUserId).First(&userId)
+		f := tx.Raw("SELECT u.id FROM battleblocks_user WHERE email = ?", userEmail).First(&userId)
 		if f.Error != nil {
 			return f.Error
 		}

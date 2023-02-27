@@ -85,8 +85,8 @@ func (gh *gameHandler) getGames(c *gin.Context) {
 		return
 	}
 
-	googleUserId := utils.GetUserId(c)
-	games, gamesCount, err := gh.gameService.getGames(page, googleUserId)
+	userEmail := utils.GetUserEmail(c)
+	games, gamesCount, err := gh.gameService.getGames(page, userEmail)
 	if err != nil {
 		c.JSON(err.Problem.Status, err.Problem)
 		return
@@ -115,9 +115,9 @@ func (gh *gameHandler) createGame(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, reject.BodyParseProblem())
 		return
 	}
-	googleUserId := utils.GetUserId(c)
 
-	err := gh.gameService.createGame(body, googleUserId)
+	userEmail := utils.GetUserEmail(c)
+	err := gh.gameService.createGame(body, userEmail)
 
 	if err != nil {
 		c.JSON(err.Problem.Status, err.Problem)
