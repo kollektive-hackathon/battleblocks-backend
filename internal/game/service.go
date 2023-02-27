@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -174,7 +175,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, googleUserId str
 			return f.Error
 		}
 
-		gs.gameContractBridge.sendCreateGameTx(createGame.Stake, merkle.Root.String(), userAuthorizer)
+		gs.gameContractBridge.sendCreateGameTx(createGame.Stake, string(merkle.Root()), userAuthorizer)
 
 		return nil
 	})
@@ -204,6 +205,138 @@ func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHi
 	}
 
 	return moves, nil
+}
+
+func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMoveRequest) *reject.ProblemWithTrace {
+	var currentUserBlockPlacements []model.Placement
+	result := gs.db.
+		Model(&model.BlockPlacement{}).
+		Where("game_id = ? AND user_id = ?").
+		Select("block_id, coordinate_x AS x coordinate_y AS y").
+		Find(&currentUserBlockPlacements)
+
+	if result.Error != nil {
+		return &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(result.Error),
+			Cause:   result.Error,
+		}
+	}
+
+	blockIds := []uint64{}
+	for _, v := range currentUserBlockPlacements {
+		blockIds = append(blockIds, v.BlockId)
+	}
+
+	var blocks []model.Block
+	result = gs.db.
+		Model(&model.Block{}).
+		Where("id IN ?", blockIds).
+		Find(&blocks)
+
+	if result.Error != nil {
+		return &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(result.Error),
+			Cause:   result.Error,
+		}
+	}
+
+	blockMap := map[uint64]model.Block{}
+	for _, v := range blocks {
+		blockMap[v.Id] = v
+	}
+
+	mtree, err := blockchain.CreateMerkleTree(currentUserBlockPlacements, blockMap)
+	if err != nil {
+		return &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(result.Error),
+			Cause:   result.Error,
+		}
+	}
+
+	opponentProofData, proofDataLoadErr := gs.getLastOpponentMoveProofData(gameId, userEmail)
+	if proofDataLoadErr != nil {
+		return &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(result.Error),
+			Cause:   result.Error,
+		}
+	}
+
+	proofNode := blockchain.CreateMerkleTreeNode(
+		int32(opponentProofData.CoordinateX),
+		int32(opponentProofData.CoordinateY),
+		opponentProofData.BlockPresent,
+		opponentProofData.Nonce)
+
+	proof, err := mtree.GenerateProof([]byte(proofNode))
+	if err != nil {
+		return &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(err),
+			Cause:   err,
+		}
+	}
+
+	cw := gs.getCustodialWallet(userEmail)
+	if cw == nil {
+		walletNotExistsErr := fmt.Errorf("custodial wallet not found while making move, user email %s", userEmail)
+		return &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(walletNotExistsErr),
+			Cause:   walletNotExistsErr,
+		}
+	}
+
+	userAuthorizer := blockchain.Authorizer{KmsResourceId: cw.ResourceId, ResourceOwnerAddress: *cw.Address}
+	if opponentProofData == nil {
+		gs.gameContractBridge.sendMove(gameId, request.X, request.Y, nil,
+			nil, nil, nil, nil, userAuthorizer)
+	} else {
+		nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 0, 64)
+		gs.gameContractBridge.sendMove(gameId, request.X, request.Y, &proof.Hashes,
+			&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber, userAuthorizer)
+	}
+
+	return nil
+}
+
+func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, userEmail string) (*model.GameGridPoint, *reject.ProblemWithTrace) {
+	var proofData model.GameGridPoint
+	result := gs.db.Raw(`
+		SELECT game_grid_point.game_id
+             , game_grid_point.user_id
+             , game_grid_point.block_present
+             , game_grid_point.coordinate_x
+             , game_grid_point.coordinate_y
+             , game_grid_point.nonce
+          FROM game_grid_point
+	INNER JOIN move_history 
+			ON move_history.game_id = game_grid_point.game_id 
+		   AND move_history.user_id = game_grid_point.user_id
+         WHERE move_history.game_id = ?
+           AND move_history.user_id = (SELECT id FROM battleblocks_user WHERE email = ?)
+	ORDER BY played_at DESC LIMIT 1
+    `, gameId, userEmail).Scan(&proofData)
+
+	if result.Error != nil {
+		return nil, &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(result.Error),
+			Cause:   result.Error,
+		}
+	}
+
+	return &proofData, nil
+}
+
+func (gs *gameService) getCustodialWallet(userEmail string) *model.CustodialWallet {
+	var custodialWallet model.CustodialWallet
+	result := gs.db.
+		Model(&custodialWallet).
+		Where("id = (SELECT custodial_wallet_id FROM battleblocks_user WHERE email = ?)", userEmail).
+		First(&custodialWallet)
+
+	if result.Error != nil {
+		return nil
+	}
+
+	return &custodialWallet
 }
 
 func checkBalance(address string) (string, error) {

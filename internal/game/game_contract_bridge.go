@@ -2,12 +2,12 @@ package game
 
 import (
 	"context"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/blockchain"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
 	"time"
 
 	gcppubsub "cloud.google.com/go/pubsub"
-	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/blockchain"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
-	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
@@ -40,6 +40,44 @@ type gameContractBridge struct {
 	db *gorm.DB
 }
 
+func (b *gameContractBridge) sendCreateGameTx(stake float32, rootMerkel string, userAuthorizer blockchain.Authorizer) {
+	commandType := "GAME_CREATE"
+	payload := []any{
+		stake,
+		rootMerkel,
+	}
+	authorizers := []blockchain.Authorizer{userAuthorizer, blockchain.GetAdminAuthorizer()}
+	cmd := blockchain.NewBlockchainCommand(commandType, payload, authorizers)
+	pubsub.Publish(cmd)
+}
+
+func (b *gameContractBridge) sendMove(
+	gameId uint64,
+	guessX uint64,
+	guessY uint64,
+	proof *[][]uint8,
+	blockPresent *bool,
+	opponentGuessX *uint64,
+	opponentGuessY *uint64,
+	nonce *uint64,
+	userAuthorizer blockchain.Authorizer,
+) {
+	commandType := "GAME_MOVE"
+	payload := []any{
+		gameId,
+		guessX,
+		guessY,
+		proof,
+		blockPresent,
+		opponentGuessX,
+		opponentGuessY,
+		nonce,
+	}
+	authorizers := []blockchain.Authorizer{userAuthorizer, blockchain.GetAdminAuthorizer()}
+	cmd := blockchain.NewBlockchainCommand(commandType, payload, authorizers)
+	pubsub.Publish(cmd)
+}
+
 func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.Message) {
 	log.Info().Msg("Received message payload " + string(message.Data))
 	messagePayload, err := utils.JsonDecodeByteStream[Moved](message.Data)
@@ -66,19 +104,6 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 	message.Ack()
 }
 
-func (b *gameContractBridge) sendCreateGameTx(stake float32, rootMerkel string, userAuthorizer blockchain.Authorizer) {
-	commandType := "GAME_CREATE"
-	payload := []any{
-		stake,
-		rootMerkel,
-	}
-	authorizers := []blockchain.Authorizer{userAuthorizer, blockchain.GetAdminAuthorizer()}
-	cmd := blockchain.NewBlockchainCommand(commandType, payload, authorizers)
-	pubsub.Publish(cmd)
-}
-
-// TODO move history endpoint
-// TODO make move POST endpoint
 func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppubsub.Message) {
 	log.Info().Msg("Received message payload " + string(message.Data))
 	messagePayload, err := utils.JsonDecodeByteStream[GameCreated](message.Data)
