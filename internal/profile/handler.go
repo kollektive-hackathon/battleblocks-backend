@@ -54,5 +54,11 @@ func (h profileHandler) activateBlock(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	profile, err := h.profile.FindByEmail(userEmail)
+	if err != nil {
+		c.JSON(err.Problem.Status, err.Problem)
+		return
+	}
+
+	c.JSON(http.StatusOK, profile)
 }
