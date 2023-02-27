@@ -39,7 +39,7 @@ func (s *registrationService) register(username string, email string, googleIden
 			Email:                    email,
 			Username:                 username,
 			CustodialWalletId:        cw.Id,
-			SelfCustodyWalletAddress: "",
+			SelfCustodyWalletAddress: nil,
 			GoogleIdentityId:         googleIdentityId,
 		}
 		result = tx.Create(&user)
