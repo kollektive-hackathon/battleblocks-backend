@@ -30,6 +30,7 @@ require (
 	github.com/bits-and-blooms/bitset v1.2.2 // indirect
 	github.com/btcsuite/btcd v0.20.1-beta // indirect
 	github.com/bytedance/sonic v1.8.0 // indirect
+	github.com/cbergoon/merkletree v0.2.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/ethereum/go-ethereum v1.9.13 // indirect
@@ -67,6 +68,7 @@ require (
 	github.com/onflow/atree v0.4.0 // indirect
 	github.com/onflow/cadence v0.31.3 // indirect
 	github.com/onflow/flow-go/crypto v0.24.4 // indirect
+	github.com/onflow/flow/protobuf/go/flow v0.3.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/plutov/paypal/v4 v4.7.0 // indirect

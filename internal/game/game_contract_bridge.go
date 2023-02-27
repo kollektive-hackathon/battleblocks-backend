@@ -1,13 +1,16 @@
 package game
 
 import (
-	gcppubsub "cloud.google.com/go/pubsub"
 	"context"
+	"time"
+
+	gcppubsub "cloud.google.com/go/pubsub"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/blockchain"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Moved struct {
@@ -63,9 +66,19 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 	message.Ack()
 }
 
+func (b *gameContractBridge) sendCreateGameTx(stake float32, rootMerkel string, userAuthorizer blockchain.Authorizer) {
+	commandType := "GAME_CREATE"
+	payload := []any{
+		stake,
+		rootMerkel,
+	}
+	authorizers := []blockchain.Authorizer{userAuthorizer, blockchain.GetAdminAuthorizer()}
+	cmd := blockchain.NewBlockchainCommand(commandType, payload, authorizers)
+	pubsub.Publish(cmd)
+}
+
 // TODO move history endpoint
 // TODO make move POST endpoint
-
 func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppubsub.Message) {
 	log.Info().Msg("Received message payload " + string(message.Data))
 	messagePayload, err := utils.JsonDecodeByteStream[GameCreated](message.Data)
@@ -79,7 +92,7 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 		OwnerId:     messagePayload.CreatorId,
 		GameStatus:  "CREATED",
 		Stake:       messagePayload.Stake,
-		TimeCreated: &timeNow,
+		TimeCreated: timeNow,
 	}
 
 	result := b.db.Create(&game)

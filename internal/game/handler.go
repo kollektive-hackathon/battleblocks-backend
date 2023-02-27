@@ -18,7 +18,12 @@ type gameHandler struct {
 
 func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 	handler := gameHandler{
-		gameService: gameService{db: db},
+		gameService: gameService{
+			db: db,
+			gameContractBridge: &gameContractBridge{
+				db: db,
+			},
+		},
 	}
 
 	routes := rg.Group("/game")
@@ -50,6 +55,12 @@ func (gh *gameHandler) playMove(c *gin.Context) {
 	// TODO
 }
 
+// JOIN Game
+// JOIN game - gameID i PLACEMENTS -- create merkel -- tx join - CHECK BALANCE
+
+// MOVE endpoint
+//  kordinate za shoot se dobiju
+//  Poslat TX --> Koordinate, PROOF, ORIGINAL LIST
 func (gh *gameHandler) getGames(c *gin.Context) {
 	page, err := utils.NewPageRequest(c)
 	if err != nil {
@@ -77,13 +88,20 @@ func (gh *gameHandler) getGames(c *gin.Context) {
 }
 
 func (gh *gameHandler) createGame(c *gin.Context) {
-	body := model.Game{}
+	//placements also sent here
+	//TODO: CHECK balance ---- execute script  with golang-flow-sdk
+	//
+	// create merkeltree, save it to DB under GAME.owner_root_merkle, send tx - with the ROOT and stake.
+
+	body := CreateGameRequest{}
 	if err := c.BindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, reject.BodyParseProblem())
 		return
 	}
+	userId := utils.GetUserId(c)
 
-	err := gh.gameService.createGame(body)
+	err := gh.gameService.createGame(body, userId)
+
 	if err != nil {
 		c.JSON(err.Problem.Status, err.Problem)
 	}

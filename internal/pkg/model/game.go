@@ -10,8 +10,8 @@ type Game struct {
 	ChallengerId *uint64
 	GameStatus   GameStatus
 	Stake        uint64
-	TimeStarted  *time.Time
-	TimeCreated  *time.Time
+	TimeStarted  time.Time
+	TimeCreated  time.Time
 	WinnerId     *uint64
 }
 
