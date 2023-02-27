@@ -133,6 +133,10 @@ func (cs *cosignService) signVoucher(transaction *flow.Transaction, custodialWal
 		}
 	}
 
+	log.
+		Debug().
+		Msg(fmt.Sprintf("Transaction Signatures %v", transaction.EnvelopeSignatures))
+
 	return transaction.EnvelopeSignatures[len(transaction.EnvelopeSignatures)-1].Signature, nil
 }
 
