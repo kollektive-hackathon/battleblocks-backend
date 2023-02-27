@@ -34,7 +34,7 @@ func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]mod
 
 	err := gs.db.Transaction(func(tx *gorm.DB) error {
 		var userId string
-		f := tx.Raw("SELECT u.id FROM battleblocks_user WHERE email = ?", userEmail).First(&userId)
+		f := tx.Raw("SELECT u.id FROM battleblocks_user u WHERE email = ?", userEmail).First(&userId)
 		if f.Error != nil {
 			return f.Error
 		}
@@ -89,7 +89,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 
 	err := gs.db.Transaction(func(tx *gorm.DB) error {
 		var userId string
-		f := tx.Raw("SELECT u.id FROM battleblocks_user WHERE email = ?", userEmail).First(&userId)
+		f := tx.Raw("SELECT u.id FROM battleblocks_user u WHERE email = ?", userEmail).First(&userId)
 		if f.Error != nil {
 			return f.Error
 		}
