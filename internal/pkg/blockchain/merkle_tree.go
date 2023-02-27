@@ -1,6 +1,8 @@
-package game
+package blockchain
 
 import (
+	"crypto/sha256"
+	"errors"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -11,7 +13,30 @@ import (
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
 )
 
-func createMerkleTreeNode(x, y int32, present bool) string {
+type TreeContent struct {
+	field string
+}
+
+//CalculateHash hashes the values of a TestContent
+func (t TreeContent) CalculateHash() ([]byte, error) {
+	h := sha256.New()
+	if _, err := h.Write([]byte(t.field)); err != nil {
+		return nil, err
+	}
+
+	return h.Sum(nil), nil
+}
+
+//Equals tests for equality of two Contents
+func (t TreeContent) Equals(other merkletree.Content) (bool, error) {
+	otherTC, ok := other.(TreeContent)
+	if !ok {
+		return false, errors.New("value is not of type TestContent")
+	}
+	return t.field == otherTC.field, nil
+}
+
+func CreateMerkleTreeNode(x, y int32, present bool) string {
 	// Format: SHIP_PRESENT|X|Y|NONCE
 	var sp int8
 	if present {
@@ -20,12 +45,12 @@ func createMerkleTreeNode(x, y int32, present bool) string {
 	return fmt.Sprintf("%v%v%v%v", sp, x, y, randomString(4))
 }
 
-func createMerkleTree(presentPlacements []Placement, blocksById map[uint64]model.Block) (*merkletree.MerkleTree, error) {
+func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64]model.Block) (*merkletree.MerkleTree, error) {
 	var li [][]merkletree.Content
 
 	for i := 0; i < 10; i++ {
 		for j := 0; j < 10; j++ {
-			nodeInStr := createMerkleTreeNode(int32(i), int32(j), true)
+			nodeInStr := CreateMerkleTreeNode(int32(i), int32(j), true)
 			node := TreeContent{
 				field: nodeInStr,
 			}
@@ -41,7 +66,7 @@ func createMerkleTree(presentPlacements []Placement, blocksById map[uint64]model
 
 		for _, single := range firstRow {
 			singleNr, _ := strconv.ParseUint(string(single), 10, 32)
-			nodeInStr := createMerkleTreeNode(int32(placement.X)+(int32(singleNr)-1), int32(placement.Y), true)
+			nodeInStr := CreateMerkleTreeNode(int32(placement.X)+(int32(singleNr)-1), int32(placement.Y), true)
 			node := TreeContent{
 				field: nodeInStr,
 			}
@@ -50,7 +75,7 @@ func createMerkleTree(presentPlacements []Placement, blocksById map[uint64]model
 
 		for _, single := range secondRow {
 			singleNr, _ := strconv.ParseUint(string(single), 10, 32)
-			nodeInStr := createMerkleTreeNode(int32(placement.X), int32(placement.Y)+(int32(singleNr)-1), true)
+			nodeInStr := CreateMerkleTreeNode(int32(placement.X), int32(placement.Y)+(int32(singleNr)-1), true)
 			node := TreeContent{
 				field: nodeInStr,
 			}

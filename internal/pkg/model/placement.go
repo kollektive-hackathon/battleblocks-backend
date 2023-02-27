@@ -1,4 +1,4 @@
-package game
+package model
 
 type Placement struct {
 	BlockId uint64 `json:"blockId"`

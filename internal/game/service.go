@@ -2,13 +2,11 @@ package game
 
 import (
 	"context"
-	"crypto/sha256"
 	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/cbergoon/merkletree"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/blockchain"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
@@ -23,29 +21,6 @@ import (
 const (
 	databaseError = "error.data.access"
 )
-
-type TreeContent struct {
-	field string
-}
-
-//CalculateHash hashes the values of a TestContent
-func (t TreeContent) CalculateHash() ([]byte, error) {
-	h := sha256.New()
-	if _, err := h.Write([]byte(t.field)); err != nil {
-		return nil, err
-	}
-
-	return h.Sum(nil), nil
-}
-
-//Equals tests for equality of two Contents
-func (t TreeContent) Equals(other merkletree.Content) (bool, error) {
-	otherTC, ok := other.(TreeContent)
-	if !ok {
-		return false, errors.New("value is not of type TestContent")
-	}
-	return t.field == otherTC.field, nil
-}
 
 type gameService struct {
 	db                 *gorm.DB
@@ -160,7 +135,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, googleUserId str
 			blockByIds[block.Id] = block
 		}
 
-		merkle, err := createMerkleTree(createGame.Placements, blockByIds)
+		merkle, err := blockchain.CreateMerkleTree(createGame.Placements, blockByIds)
 		if err != nil {
 			return err
 		}
