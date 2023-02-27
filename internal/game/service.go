@@ -52,11 +52,17 @@ type gameService struct {
 	gameContractBridge *gameContractBridge
 }
 
-func (gs *gameService) getGames(page utils.PageRequest, userId string) ([]model.Game, *int64, *reject.ProblemWithTrace) {
+func (gs *gameService) getGames(page utils.PageRequest, googleUserId string) ([]model.Game, *int64, *reject.ProblemWithTrace) {
 	games := []model.Game{}
 	gamesSize := int64(0)
 
 	err := gs.db.Transaction(func(tx *gorm.DB) error {
+		var userId string
+		f := tx.Raw("SELECT u.id FROM battleblocks_user WHERE google_identity_id = ?", googleUserId).First(&userId)
+		if f.Error != nil {
+			return f.Error
+		}
+
 		res := tx.Table("game").
 			Count(&gamesSize)
 		if res.Error != nil {
@@ -93,10 +99,11 @@ func (gs *gameService) getGames(page utils.PageRequest, userId string) ([]model.
 	}
 	return games, &gamesSize, nil
 }
+
 //TODO:
 // Na svakom Moveu kreirati merkeltree ponovo iz block placementa i dobiti PROOF
 
-func (gs *gameService) createGame(createGame CreateGameRequest, userId string) *reject.ProblemWithTrace {
+func (gs *gameService) createGame(createGame CreateGameRequest, googleUserId string) *reject.ProblemWithTrace {
 	// TODO Send tx for creating game with the model
 	// Spremiti u bazu game sa prizeom koji prima
 
@@ -105,8 +112,14 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userId string) *
 	// create merkeltree, send tx - with the ROOT and stake.
 
 	err := gs.db.Transaction(func(tx *gorm.DB) error {
+		var userId string
+		f := tx.Raw("SELECT u.id FROM battleblocks_user WHERE google_identity_id = ?", googleUserId).First(&userId)
+		if f.Error != nil {
+			return f.Error
+		}
+
 		var wallet model.CustodialWallet
-		f := tx.Raw(`SELECT cw FROM battleblocks_user bu
+		f = tx.Raw(`SELECT cw FROM battleblocks_user bu
 			LEFT JOIN custodial_wallet cw ON bu.custodial_wallet_id = cw.id 
 			WHERE bu.id = ?`, userId).
 			First(wallet)
