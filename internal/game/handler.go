@@ -51,8 +51,29 @@ func (gh *gameHandler) getMoves(c *gin.Context) {
 	c.JSON(http.StatusOK, moves)
 }
 
+type PlayMoveRequest struct {
+	X uint   `json:"x"`
+	Y uint64 `json:"y"`
+}
+
 func (gh *gameHandler) playMove(c *gin.Context) {
-	// TODO
+	body := PlayMoveRequest{}
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, reject.BodyParseProblem())
+		return
+	}
+
+	userEmail := utils.GetUserEmail(c)
+
+	// TODO dobijem coordinate za shoot
+
+	// TODO iz move history dohvati od protivnika zadnji move i napravi proof
+	//    - iz block placement mojih kreirati merkle tree i pomocu nonce tablice dohvatit
+	//   sve (isPresent, x, y, nonce) za svog usera i taj game (fabsa savea nonceve prilikom game create)
+
+	// TODO iz kreiranog merkle treea dobit proof za field koji gada trenutno
+
+	// TODO posalji command on chain
 }
 
 // JOIN Game
