@@ -60,11 +60,18 @@ func (b *gameContractBridge) sendMove(
 	opponentGuessX *uint64,
 	opponentGuessY *uint64,
 	nonce *uint64,
+	userAuthorizer blockchain.Authorizer,
 ) {
 	commandType := "GAME_MOVE"
 	payload := []any{
-		stake,
-		rootMerkel,
+		gameId,
+		guessX,
+		guessY,
+		proof,
+		blockPresent,
+		opponentGuessX,
+		opponentGuessY,
+		nonce,
 	}
 	authorizers := []blockchain.Authorizer{userAuthorizer, blockchain.GetAdminAuthorizer()}
 	cmd := blockchain.NewBlockchainCommand(commandType, payload, authorizers)

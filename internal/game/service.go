@@ -3,6 +3,7 @@ package game
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -174,7 +175,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, googleUserId str
 			return f.Error
 		}
 
-		gs.gameContractBridge.sendCreateGameTx(createGame.Stake, merkle.Root.String(), userAuthorizer)
+		gs.gameContractBridge.sendCreateGameTx(createGame.Stake, string(merkle.Root()), userAuthorizer)
 
 		return nil
 	})
@@ -260,29 +261,37 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		}
 	}
 
-	tc := blockchain.TreeContent{Field: blockchain.CreateMerkleTreeNode(
+	proofNode := blockchain.CreateMerkleTreeNode(
 		int32(opponentProofData.CoordinateX),
 		int32(opponentProofData.CoordinateY),
 		opponentProofData.BlockPresent,
-		opponentProofData.Nonce)}
+		opponentProofData.Nonce)
 
-	verified, verificationError := mtree.VerifyContent(tc)
-
-	if verificationError != nil {
+	proof, err := mtree.GenerateProof([]byte(proofNode))
+	if err != nil {
 		return &reject.ProblemWithTrace{
-			Problem: reject.UnexpectedProblem(result.Error),
-			Cause:   result.Error,
+			Problem: reject.UnexpectedProblem(err),
+			Cause:   err,
 		}
 	}
 
-	// TODO ako je prvi move, posalji null u tx cmds za reveal/proof - treba uopce if else?
+	cw := gs.getCustodialWallet(userEmail)
+	if cw == nil {
+		walletNotExistsErr := fmt.Errorf("custodial wallet not found while making move, user email %s", userEmail)
+		return &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(walletNotExistsErr),
+			Cause:   walletNotExistsErr,
+		}
+	}
+
+	userAuthorizer := blockchain.Authorizer{KmsResourceId: cw.ResourceId, ResourceOwnerAddress: *cw.Address}
 	if opponentProofData == nil {
 		gs.gameContractBridge.sendMove(gameId, request.X, request.Y, nil,
-			nil, nil, nil, nil)
+			nil, nil, nil, nil, userAuthorizer)
 	} else {
 		nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 0, 64)
-		gs.gameContractBridge.sendMove(gameId, request.X, request.Y, verified,
-			&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber)
+		gs.gameContractBridge.sendMove(gameId, request.X, request.Y, &proof.Hashes,
+			&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber, userAuthorizer)
 	}
 
 	return nil
@@ -314,6 +323,20 @@ func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, userEmail str
 	}
 
 	return &proofData, nil
+}
+
+func (gs *gameService) getCustodialWallet(userEmail string) *model.CustodialWallet {
+	var custodialWallet model.CustodialWallet
+	result := gs.db.
+		Model(&custodialWallet).
+		Where("id = (SELECT custodial_wallet_id FROM battleblocks_user WHERE email = ?)", userEmail).
+		First(&custodialWallet)
+
+	if result.Error != nil {
+		return nil
+	}
+
+	return &custodialWallet
 }
 
 func checkBalance(address string) (string, error) {
