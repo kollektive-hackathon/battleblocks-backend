@@ -1,8 +1,10 @@
 package model
 
 type GameGridField struct {
-	GameId      uint64
-	Coordinatex uint64
-	Coordinatey uint64
-	nonce       string
+	GameId       uint64
+	UserId       uint64
+	BlockPresent bool
+	CoordinateX  uint64
+	CoordinateY  uint64
+	Nonce        string
 }
