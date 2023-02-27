@@ -12,7 +12,7 @@ type Profile struct {
 type UserInventoryBlock struct {
 	Id     uint64 `json:"id"`
 	Name   string `json:"name"`
-	Type   string `json:"type"`
+	Type   string `json:"blockType"`
 	Rarity string `json:"rarity"`
 	Active bool   `json:"active"`
 }
