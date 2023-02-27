@@ -59,6 +59,10 @@ func (cs *cosignService) VerifyAndSign(credentials auth.Token, request CosignReq
 		return cs.signVoucher(transaction, *custodialWallet)
 	}
 
+	log.
+		Debug().
+		Msg(fmt.Sprintf("found custodial wallet %v", custodialWallet))
+
 	err = fmt.Errorf("invalid request: you are not authorized to request this signature")
 	return nil, &reject.ProblemWithTrace{
 		Problem: reject.UnexpectedProblem(err),
@@ -152,6 +156,9 @@ func (cs *cosignService) validateRequestTxCode(requestTxCode string) bool {
 	requestTxCode = pattern.ReplaceAllString(requestTxCode, "")
 
 	if serverTxCode == requestTxCode {
+		log.
+			Debug().
+			Msg("Transactions match")
 		return true
 	}
 
