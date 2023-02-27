@@ -23,19 +23,34 @@ type Moved struct {
 	Y             uint   `json:"coordinateY"`
 }
 
+type ChallengerJoined struct {
+	GameId            uint64           `json:"gameId"`
+	StartTime         uint64           `json:"startTime"`
+	Wager             float64          `json:"wager"`
+	PlayerA           string           `json:"playerA"`
+	PlayerB           string           `json:"playerB"`
+	Winner            string           `json:"winner"`
+	PlayerHitCount    map[string]uint8 `json:"playerHitCount"`
+	GameState         uint8            `json:"gameState"`
+	Turn              uint8            `json:"turn"`
+	PlayerAMerkleRoot []uint8          `json:"playerAMerkleRoot"`
+	PlayerBMerkleRoot []uint8          `json:"playerBMerkleRoot"`
+}
+
 type GameOver struct {
 	GameId         uint64          `json:"gameID"`
 	PlayerA        uint64          `json:"playerA"`
 	PlayerB        uint64          `json:"playerB"`
 	Winner         uint64          `json:"winner"`
-	PlayerHitCount map[string]uint `json:"PlayerHitCount"`
+	PlayerHitCount map[string]uint `json:"playerHitCount"`
 }
 
 type GameCreated struct {
-	GameId         uint64 `json:"gameId"`
-	CreatorId      uint64 `json:"creatorId"`
+	GameId         uint64 `json:"gameID"`
+	CreatorId      uint64 `json:"creatorID"`
 	CreatorAddress string `json:"creatorAddress"`
-	Stake          uint64 `json:"stake"`
+	Stake          uint64 `json:"wager"`
+	Payload        uint64 `json:"payload"`
 }
 
 type gameContractBridge struct {
@@ -149,6 +164,7 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 
 	timeNow := time.Now().UTC()
 	game := model.Game{
+		FlowId:      messagePayload.Payload,
 		OwnerId:     messagePayload.CreatorId,
 		GameStatus:  "CREATED",
 		Stake:       messagePayload.Stake,
