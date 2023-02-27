@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"firebase.google.com/go/v4/auth"
 	"fmt"
+	"regexp"
+	"strings"
+
+	"firebase.google.com/go/v4/auth"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
 	"github.com/onflow/flow-go-sdk"
@@ -13,8 +16,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
-	"regexp"
-	"strings"
 )
 
 type cosignService struct {
