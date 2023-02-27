@@ -5,13 +5,13 @@ import (
 	"gorm.io/gorm"
 )
 
-type profileService struct {
-	db *gorm.DB
+type ProfileService struct {
+	Db *gorm.DB
 }
 
-func (s *profileService) FindById(id uint64) (*Profile, *reject.ProblemWithTrace) {
+func (s *ProfileService) FindById(id uint64) (*Profile, *reject.ProblemWithTrace) {
 	var profile Profile
-	result := s.db.
+	result := s.Db.
 		Table("battleblocks_user").
 		Joins("INNER JOIN user_block_inventory ON battleblocks_user.id = user_block_inventory.user_id").
 		Joins("INNER JOIN custodial_wallet ON battleblocks_user.custodial_wallet_id = custodial_wallet.id").
@@ -33,7 +33,7 @@ func (s *profileService) FindById(id uint64) (*Profile, *reject.ProblemWithTrace
 	}
 
 	var userBlocksInventory []UserInventoryBlock
-	s.db.
+	s.Db.
 		Table("user_block_inventory").
 		Joins("INNER JOIN block ON user_block_inventory.block_id = block.id").
 		Where("user_block_inventory.user_id = ?", id).
@@ -58,8 +58,8 @@ func (s *profileService) FindById(id uint64) (*Profile, *reject.ProblemWithTrace
 	return &profile, nil
 }
 
-func (s *profileService) activateBlocks(userId uint64, body ActivateBlocksRequest) *reject.ProblemWithTrace {
-	err := s.db.Transaction(func(tx *gorm.DB) error {
+func (s *ProfileService) activateBlocks(userId uint64, body ActivateBlocksRequest) *reject.ProblemWithTrace {
+	err := s.Db.Transaction(func(tx *gorm.DB) error {
 		result := tx.Exec(
 			`UPDATE user_block_inventory 
                     SET active = true 

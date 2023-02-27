@@ -14,16 +14,17 @@ type registrationService struct {
 	bridge *accountContractBridge
 }
 
-func (s *registrationService) register(username string, email string, googleIdentityId string) *reject.ProblemWithTrace {
+func (s *registrationService) register(username string, email string, googleIdentityId string) (uint64, *reject.ProblemWithTrace) {
 	ctx := context.Background()
 	defaultKeyIndex := 0
 	defaultKeyWeight := -1
 	accountKey, _, rid, err := keymgmt.GenerateAsymetricKey(ctx, defaultKeyIndex, defaultKeyWeight)
 	if err != nil {
-		return &reject.ProblemWithTrace{Problem: reject.UnexpectedProblem(err), Cause: err}
+		return 0, &reject.ProblemWithTrace{Problem: reject.UnexpectedProblem(err), Cause: err}
 	}
 
 	publicKey := accountKey.PublicKey.String()[2:]
+	var userId uint64
 
 	err = s.db.Transaction(func(tx *gorm.DB) error {
 		cw := model.CustodialWallet{
@@ -54,14 +55,16 @@ func (s *registrationService) register(username string, email string, googleIden
 			return result.Error
 		}
 
+		userId = user.Id
+
 		return nil
 	})
 
 	if err != nil {
-		return &reject.ProblemWithTrace{Problem: reject.UnexpectedProblem(err), Cause: err}
+		return 0, &reject.ProblemWithTrace{Problem: reject.UnexpectedProblem(err), Cause: err}
 	}
 
 	s.bridge.createCustodialAccount(publicKey)
 
-	return nil
+	return userId, nil
 }

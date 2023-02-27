@@ -10,12 +10,12 @@ import (
 )
 
 type profileHandler struct {
-	profile profileService
+	profile *ProfileService
 }
 
 func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 	handler := profileHandler{
-		profile: profileService{db: db},
+		profile: &ProfileService{Db: db},
 	}
 
 	routes := rg.Group("/profile")

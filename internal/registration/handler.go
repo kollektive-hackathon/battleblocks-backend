@@ -7,24 +7,27 @@ import (
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/ws"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/profile"
 	"gorm.io/gorm"
 	"net/http"
 	"strings"
 )
 
 type registrationHandler struct {
-	registration registrationService
+	registration *registrationService
+	profile      *profile.ProfileService
 }
 
 func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 	handler := registrationHandler{
-		registration: registrationService{
+		registration: &registrationService{
 			db: db,
 			bridge: &accountContractBridge{
 				db:              db,
 				notificationHub: ws.NewNotificationHub(),
 			},
 		},
+		profile: &profile.ProfileService{Db: db},
 	}
 
 	routes := rg.Group("/registration")
@@ -59,11 +62,18 @@ func (h registrationHandler) register(c *gin.Context) {
 		return
 	}
 
-	err := h.registration.register(username, utils.GetUserEmail(c), utils.GetUserExternalId(c))
+	userId, err := h.registration.register(username, utils.GetUserEmail(c), utils.GetUserExternalId(c))
 
 	if err != nil {
-		c.AbortWithStatusJSON(err.Problem.Status, err.Problem)
+		c.JSON(err.Problem.Status, err.Problem)
+		return
 	}
 
-	c.Status(http.StatusNoContent)
+	createdProfile, profileLoadErr := h.profile.FindById(userId)
+	if profileLoadErr != nil {
+		c.JSON(err.Problem.Status, err.Problem)
+		return
+	}
+
+	c.JSON(http.StatusOK, createdProfile)
 }
