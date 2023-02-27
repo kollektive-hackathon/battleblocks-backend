@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
+	"github.com/rs/zerolog/log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
@@ -50,6 +51,7 @@ func (h shopHandler) paypalWebhook(c *gin.Context) {
 	rawBody, _ := ioutil.ReadAll(c.Request.Body)
 	var body map[string]any
 	json.Unmarshal(rawBody, &body)
+	log.Info().Interface("pp_data", rawBody).Msg("Pp data--")
 
 	// description -- user id
 	// custom_id -- item id
