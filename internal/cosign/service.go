@@ -76,7 +76,7 @@ func (cs *cosignService) validate(transaction *flow.Transaction, credentials aut
 
 	log.
 		Debug().
-		Msg(fmt.Sprintf("Fetching custodial wallet by user id %s and address %s", userGoogleId))
+		Msg(fmt.Sprintf("Fetching custodial wallet by user id %s", userGoogleId))
 
 	var custodialWallet model.CustodialWallet
 	result := cs.db.
