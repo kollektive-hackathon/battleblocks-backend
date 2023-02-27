@@ -167,10 +167,10 @@ func (cs *cosignService) getTxCode() string {
 	txCode := cs.getTxCodeTemplate()
 
 	addressTemplates := map[string]string{
-		"BATTLE_BLOCKS_ACCOUNTS_ADDRESS": viper.Get("BATTLE_BLOCKS_ACCOUNTS_ADDRESS").(string),
-		"BATTLE_BLOCKS_NFT_ADDRESS":      viper.Get("BATTLE_BLOCKS_NFT_ADDRESS").(string),
-		"FUNGIBLE_TOKEN_ADDRESS":         viper.Get("FUNGIBLE_TOKEN_ADDRESS").(string),
-		"NON_FUNGIBLE_TOKEN_ADDRESS":     viper.Get("NON_FUNGIBLE_TOKEN_ADDRESS").(string),
+		"BATTLE_BLOCKS_ACCOUNTS_ADDRESS": viper.Get("0xBATTLE_BLOCKS_ACCOUNTS_ADDRESS").(string),
+		"BATTLE_BLOCKS_NFT_ADDRESS":      viper.Get("0xBATTLE_BLOCKS_NFT_ADDRESS").(string),
+		"FUNGIBLE_TOKEN_ADDRESS":         viper.Get("0xFUNGIBLE_TOKEN_ADDRESS").(string),
+		"NON_FUNGIBLE_TOKEN_ADDRESS":     viper.Get("0xNON_FUNGIBLE_TOKEN_ADDRESS").(string),
 	}
 
 	for k, v := range addressTemplates {
