@@ -25,7 +25,7 @@ type nftContractBridge struct {
 	db *gorm.DB
 }
 
-func (b *nftContractBridge) mint(recipientAddress, block model.Block, authorizers []blockchain.Authorizer) {
+func (b *nftContractBridge) mint(recipientAddress string, block model.Block, authorizers []blockchain.Authorizer) {
 	commandType := "NFT_MINT"
 	payload := []any{
 		recipientAddress,
