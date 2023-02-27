@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
-	"firebase.google.com/go/v4/auth"
 	"fmt"
+	"regexp"
+	"strings"
+
+	"firebase.google.com/go/v4/auth"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
 	"github.com/onflow/flow-go-sdk"
@@ -13,8 +16,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
-	"regexp"
-	"strings"
 )
 
 type cosignService struct {
@@ -75,7 +76,7 @@ func (cs *cosignService) validate(transaction *flow.Transaction, credentials aut
 
 	log.
 		Debug().
-		Msg(fmt.Sprintf("Fetching custodial wallet by user id %s and address %s", userGoogleId))
+		Msg(fmt.Sprintf("Fetching custodial wallet by user id %s", userGoogleId))
 
 	var custodialWallet model.CustodialWallet
 	result := cs.db.
@@ -166,10 +167,10 @@ func (cs *cosignService) getTxCode() string {
 	txCode := cs.getTxCodeTemplate()
 
 	addressTemplates := map[string]string{
-		"BATTLE_BLOCKS_ACCOUNTS_ADDRESS": viper.Get("BATTLE_BLOCKS_ACCOUNTS_ADDRESS").(string),
-		"BATTLE_BLOCKS_NFT_ADDRESS":      viper.Get("BATTLE_BLOCKS_NFT_ADDRESS").(string),
-		"FUNGIBLE_TOKEN_ADDRESS":         viper.Get("FUNGIBLE_TOKEN_ADDRESS").(string),
-		"NON_FUNGIBLE_TOKEN_ADDRESS":     viper.Get("NON_FUNGIBLE_TOKEN_ADDRESS").(string),
+		"BATTLE_BLOCKS_ACCOUNTS_ADDRESS": viper.Get("0xBATTLE_BLOCKS_ACCOUNTS_ADDRESS").(string),
+		"BATTLE_BLOCKS_NFT_ADDRESS":      viper.Get("0xBATTLE_BLOCKS_NFT_ADDRESS").(string),
+		"FUNGIBLE_TOKEN_ADDRESS":         viper.Get("0xFUNGIBLE_TOKEN_ADDRESS").(string),
+		"NON_FUNGIBLE_TOKEN_ADDRESS":     viper.Get("0xNON_FUNGIBLE_TOKEN_ADDRESS").(string),
 	}
 
 	for k, v := range addressTemplates {

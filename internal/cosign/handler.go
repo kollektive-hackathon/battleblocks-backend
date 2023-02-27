@@ -1,12 +1,13 @@
 package cosign
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
 	"gorm.io/gorm"
-	"net/http"
 )
 
 type cosignHandler struct {
@@ -14,7 +15,6 @@ type cosignHandler struct {
 }
 
 type CosignRequest struct {
-	Method  string         `json:"method"`
 	Payload map[string]any `json:"payload"`
 }
 
