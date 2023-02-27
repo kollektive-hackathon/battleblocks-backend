@@ -13,12 +13,12 @@ import (
 )
 
 type gameHandler struct {
-	gameService gameService
+	gameService *gameService
 }
 
 func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 	handler := gameHandler{
-		gameService: gameService{
+		gameService: &gameService{
 			db: db,
 			gameContractBridge: &gameContractBridge{
 				db: db,
@@ -51,8 +51,27 @@ func (gh *gameHandler) getMoves(c *gin.Context) {
 	c.JSON(http.StatusOK, moves)
 }
 
+type PlayMoveRequest struct {
+	X uint64 `json:"x"`
+	Y uint64 `json:"y"`
+}
+
 func (gh *gameHandler) playMove(c *gin.Context) {
-	// TODO
+	gameId, parseErr := strconv.ParseUint(c.Param("id"), 0, 64)
+	if parseErr != nil {
+		c.JSON(http.StatusBadRequest, reject.RequestParamsProblem())
+		return
+	}
+
+	body := PlayMoveRequest{}
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, reject.BodyParseProblem())
+		return
+	}
+
+	userEmail := utils.GetUserEmail(c)
+
+	gh.gameService.playMove(gameId, userEmail, body)
 }
 
 // JOIN Game

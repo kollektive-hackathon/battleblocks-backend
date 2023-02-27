@@ -1,6 +1,6 @@
 package model
 
-type GameGridField struct {
+type GameGridPoint struct {
 	GameId       uint64
 	UserId       uint64
 	BlockPresent bool

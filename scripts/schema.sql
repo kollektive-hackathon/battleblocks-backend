@@ -119,3 +119,14 @@ CREATE TABLE nft_purchase_history
 
     CONSTRAINT nft_purchase_history_buyer_id FOREIGN KEY (buyer_id) REFERENCES battleblocks_user (id)
 );
+
+CREATE TABLE game_grid_point (
+    game_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    block_present BOOL NOT NULL,
+    coordinate_x INTEGER NOT NULL,
+    coordinate_y INTEGER NOT NULL,
+    nonce text NOT NULL,
+
+    PRIMARY KEY (game_id, user_id)
+);

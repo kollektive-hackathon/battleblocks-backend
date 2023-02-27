@@ -14,7 +14,7 @@ import (
 )
 
 type TreeContent struct {
-	field string
+	Field string
 }
 
 //CalculateHash hashes the values of a TestContent
@@ -36,13 +36,13 @@ func (t TreeContent) Equals(other merkletree.Content) (bool, error) {
 	return t.field == otherTC.field, nil
 }
 
-func CreateMerkleTreeNode(x, y int32, present bool) string {
+func CreateMerkleTreeNode(x, y int32, present bool, nonce string) string {
 	// Format: SHIP_PRESENT|X|Y|NONCE
 	var sp int8
 	if present {
 		sp = 1
 	}
-	return fmt.Sprintf("%v%v%v%v", sp, x, y, randomString(4))
+	return fmt.Sprintf("%v%v%v%v", sp, x, y, nonce) // TODO randomString(4)
 }
 
 func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64]model.Block) (*merkletree.MerkleTree, error) {
