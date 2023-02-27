@@ -46,7 +46,7 @@ func CreateMerkleTreeNode(x, y int32, present bool, nonce string) string {
 	return fmt.Sprintf("%v%v%v%v", sp, x, y, nonce)
 }
 
-func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64]model.Block) (*merkletree.MerkleTree, error) {
+func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64]model.Block) (*merkletree.MerkleTree, [][]byte, error) {
 	var li [][]string
 
 	for i := 0; i < 10; i++ {
@@ -86,10 +86,10 @@ func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64
 	mt, err := merkletree.New(treeData)
 	if err != nil {
 		log.Warn().Err(err).Msg("Error while creating merkle tree")
-		return nil, err
+		return nil, nil, err
 	}
 
-	return mt, nil
+	return mt, treeData, nil
 }
 
 // TODO remove
@@ -157,5 +157,5 @@ func getStringInBetween(str string, start string, end string) (result string) {
 }
 
 func randomString() string {
-	return fmt.Sprintf("%05d",rand.Intn(10000))
+	return fmt.Sprintf("%05d", rand.Intn(10000))
 }

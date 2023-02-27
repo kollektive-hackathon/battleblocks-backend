@@ -32,6 +32,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 	routes := rg.Group("/game")
 	routes.GET("", middleware.VerifyAuthToken, handler.getGames)
 	routes.POST("", middleware.VerifyAuthToken, handler.createGame)
+	routes.POST("/:id/join", middleware.VerifyAuthToken, handler.joinGame)
 
 	routes.GET("/:id/moves", middleware.VerifyAuthToken, handler.getMoves)
 	routes.POST("/:id/moves", middleware.VerifyAuthToken, handler.playMove)
@@ -98,9 +99,6 @@ func (gh *gameHandler) playMove(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// JOIN Game
-// JOIN game - gameID i PLACEMENTS -- create merkel -- tx join - CHECK BALANCE
-
 func (gh *gameHandler) getGames(c *gin.Context) {
 	page, err := utils.NewPageRequest(c)
 	if err != nil {
@@ -128,11 +126,6 @@ func (gh *gameHandler) getGames(c *gin.Context) {
 }
 
 func (gh *gameHandler) createGame(c *gin.Context) {
-	//placements also sent here
-	//TODO: CHECK balance ---- execute script  with golang-flow-sdk
-	//
-	// create merkeltree, save it to DB under GAME.owner_root_merkle, send tx - with the ROOT and stake.
-
 	body := CreateGameRequest{}
 	if err := c.BindJSON(&body); err != nil {
 		c.JSON(http.StatusBadRequest, reject.BodyParseProblem())
@@ -141,6 +134,26 @@ func (gh *gameHandler) createGame(c *gin.Context) {
 
 	userEmail := utils.GetUserEmail(c)
 	err := gh.gameService.createGame(body, userEmail)
+
+	if err != nil {
+		c.JSON(err.Problem.Status, err.Problem)
+	}
+}
+
+func (gh *gameHandler) joinGame(c *gin.Context) {
+	body := JoinGameRequest{}
+	if err := c.BindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, reject.BodyParseProblem())
+		return
+	}
+	gameId, parseErr := strconv.ParseUint(c.Param("id"), 0, 64)
+	if parseErr != nil {
+		c.JSON(http.StatusBadRequest, reject.RequestParamsProblem())
+		return
+	}
+
+	userEmail := utils.GetUserEmail(c)
+	err := gh.gameService.joinGame(body, gameId, userEmail)
 
 	if err != nil {
 		c.JSON(err.Problem.Status, err.Problem)

@@ -76,17 +76,98 @@ func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]mod
 	return games, &gamesSize, nil
 }
 
-//TODO:
-// Na svakom Moveu kreirati merkeltree ponovo iz block placementa i dobiti PROOF
+func (gs *gameService) joinGame(joinGame JoinGameRequest, gameId uint64, userEmail string) *reject.ProblemWithTrace {
+	err := gs.db.Transaction(func(tx *gorm.DB) error {
+		var userId string
+		f := tx.Raw("SELECT u.id FROM battleblocks_user u WHERE email = ?", userEmail).First(&userId)
+		if f.Error != nil {
+			return f.Error
+		}
+
+		var game *model.Game
+		f = tx.Raw("SELECT * FROM game u WHERE id = ?", gameId).First(game)
+		if f.Error != nil {
+			return f.Error
+		}
+
+		wallet := gs.getCustodialWallet(userEmail)
+		if wallet == nil {
+			return errors.New("wallet does not exist")
+		}
+
+		blockIds := []uint64{}
+		for _, placement := range joinGame.Placements {
+			blockIds = append(blockIds, placement.BlockId)
+		}
+
+		var blocks []model.Block
+
+		f = tx.Raw("SELECT * FROM block b WHERE b.id IN (?)", blockIds).Scan(blocks)
+		if f.Error != nil {
+			log.Warn().Msg("error fetching blocks of placements")
+			return f.Error
+		}
+
+		blockByIds := map[uint64]model.Block{}
+		for _, block := range blocks {
+			blockByIds[block.Id] = block
+		}
+
+		// mtree , _ , _ := blockchain.CreateMerkleTree(joinGame.Placements, blockByIds)
+		merkle, mtreeData, err := blockchain.CreateMerkleTree(joinGame.Placements, blockByIds)
+		if err != nil {
+			return err
+		}
+
+		owner, _ := strconv.ParseUint(userId, 10, 64)
+		var points []*model.GameGridPoint
+		for _, singlePoint := range mtreeData {
+			points = append(points, pointFromData(string(singlePoint), gameId, owner))
+		}
+
+		f = tx.Table("game_grid_point").Create(points)
+		if f.Error != nil {
+			log.Warn().Msg("cannot create game grid points")
+			return f.Error
+		}
+
+		userAuthorizer := blockchain.Authorizer{
+			KmsResourceId:        wallet.ResourceId,
+			ResourceOwnerAddress: *wallet.Address,
+		}
+
+		var blockPlacements []*model.BlockPlacement
+		for _, placement := range joinGame.Placements {
+			blockPlacements = append(blockPlacements, &model.BlockPlacement{
+				BlockId:     strconv.FormatUint(placement.BlockId, 10),
+				UserId:      owner,
+				GameId:      game.Id,
+				Coordinatex: placement.X,
+				Coordinatey: placement.Y,
+			})
+		}
+
+		f = tx.Table(model.BlockPlacement{}.TableName()).Create(blockPlacements)
+		if f.Error != nil {
+			log.Warn().Msg("error persisting blocks placements")
+			return f.Error
+		}
+
+		gs.gameContractBridge.sendJoinGame(float32(game.Stake), string(merkle.Root()), gameId, userAuthorizer)
+		return nil
+
+	})
+
+	if err != nil {
+		return &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(err),
+			Cause:   err,
+		}
+	}
+	return nil
+}
 
 func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string) *reject.ProblemWithTrace {
-	// TODO Send tx for creating game with the model
-	// Spremiti u bazu game sa prizeom koji prima
-
-	//placements also sent here
-	//TODO: CHECK balance ---- execute script  with golang-flow-sdk
-	// create merkeltree, send tx - with the ROOT and stake.
-
 	err := gs.db.Transaction(func(tx *gorm.DB) error {
 		var userId string
 		f := tx.Raw("SELECT u.id FROM battleblocks_user u WHERE email = ?", userEmail).First(&userId)
@@ -98,7 +179,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 		f = tx.Raw(`SELECT cw FROM battleblocks_user bu
 			LEFT JOIN custodial_wallet cw ON bu.custodial_wallet_id = cw.id 
 			WHERE bu.id = ?`, userId).
-			First(wallet)
+			First(&wallet)
 
 		if f.Error != nil {
 			log.Warn().Msg("error fetching address of current user")
@@ -136,7 +217,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 			blockByIds[block.Id] = block
 		}
 
-		merkle, err := blockchain.CreateMerkleTree(createGame.Placements, blockByIds)
+		merkle, mtreeData, err := blockchain.CreateMerkleTree(createGame.Placements, blockByIds)
 		if err != nil {
 			return err
 		}
@@ -172,6 +253,17 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 		f = tx.Table(model.BlockPlacement{}.TableName()).Create(blockPlacements)
 		if f.Error != nil {
 			log.Warn().Msg("error persisting blocks placements")
+			return f.Error
+		}
+
+		var points []*model.GameGridPoint
+		for _, singlePoint := range mtreeData {
+			points = append(points, pointFromData(string(singlePoint), game.Id, owner))
+		}
+
+		f = tx.Table("game_grid_point").Create(points)
+		if f.Error != nil {
+			log.Warn().Msg("cannot create game grid points")
 			return f.Error
 		}
 
@@ -245,7 +337,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		blockMap[v.Id] = v
 	}
 
-	mtree, err := blockchain.CreateMerkleTree(currentUserBlockPlacements, blockMap)
+	mtree, _, err := blockchain.CreateMerkleTree(currentUserBlockPlacements, blockMap)
 	if err != nil {
 		return &reject.ProblemWithTrace{
 			Problem: reject.UnexpectedProblem(result.Error),
@@ -371,4 +463,26 @@ func checkBalance(address string) (string, error) {
 	}
 
 	return balance.String(), nil
+}
+
+func pointFromData(singlePoint string, gameId uint64, userId uint64) *model.GameGridPoint {
+	p := singlePoint[:1]
+	x := singlePoint[1:2]
+	y := singlePoint[2:3]
+	nonce := singlePoint[3:8]
+	var present bool
+	if p == "1" {
+		present = true
+	}
+	cordX, _ := strconv.ParseUint(x, 10, 64)
+	cordY, _ := strconv.ParseUint(y, 10, 64)
+
+	return &model.GameGridPoint{
+		GameId:       gameId,
+		UserId:       userId,
+		BlockPresent: present,
+		CoordinateX:  cordX,
+		CoordinateY:  cordY,
+		Nonce:        nonce,
+	}
 }
