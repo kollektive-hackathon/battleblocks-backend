@@ -51,8 +51,8 @@ CREATE TABLE game
     challenger_id      BIGINT,
     game_status        GAME_STATUS NOT NULL,
     stake              BIGINT      NOT NULL,
-    time_started       TIMESTAMP WITH TIME ZONE,
-    time_created       TIMESTAMP WITH TIME ZONE,
+    time_started       BIGINT,
+    time_created       BIGINT,
     winner             BIGINT
 );
 
@@ -92,7 +92,7 @@ CREATE TABLE move_history
     game_id     BIGINT  NOT NULL,
     coordinateX INTEGER NOT NULL,
     coordinateY INTEGER NOT NULL,
-    played_at   TIMESTAMP WITH TIME ZONE,
+    played_at   BIGINT,
 
     UNIQUE (game_id, coordinateX, coordinateY),
 
@@ -115,7 +115,7 @@ CREATE TABLE nft_purchase_history
 (
     nft_id       BIGINT                   NOT NULL PRIMARY KEY,
     buyer_id     BIGINT                   NOT NULL,
-    purchased_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    purchased_at BIGINT NOT NULL,
 
     CONSTRAINT nft_purchase_history_buyer_id FOREIGN KEY (buyer_id) REFERENCES battleblocks_user (id)
 );

@@ -146,7 +146,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 			OwnerId:     owner,
 			GameStatus:  model.GameCreated,
 			Stake:       uint64(createGame.Stake),
-			TimeCreated: time.Now(),
+			TimeCreated: time.Now().UTC().UnixMilli(),
 		}
 		f = tx.Table("game").Create(game)
 		if f.Error != nil {

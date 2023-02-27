@@ -109,7 +109,7 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 		GameId:      messagePayload.GameId,
 		CoordinateX: messagePayload.X,
 		CoordinateY: messagePayload.Y,
-		PlayedAt:    time.Now().UTC(),
+		PlayedAt:    time.Now().UTC().UnixMilli(),
 	}
 
 	result := b.db.Create(&mh)
@@ -168,7 +168,7 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 		OwnerId:     messagePayload.CreatorId,
 		GameStatus:  "CREATED",
 		Stake:       messagePayload.Stake,
-		TimeCreated: timeNow,
+		TimeCreated: timeNow.UnixMilli(),
 	}
 
 	result := b.db.Create(&game)

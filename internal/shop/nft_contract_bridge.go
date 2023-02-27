@@ -113,7 +113,7 @@ func (b *nftContractBridge) handleMinted(_ context.Context, m *gcppubsub.Message
 		nft_history := model.NftPurchaseHistory{
 			NftId:       nft.Id,
 			BuyerId:     user.Id,
-			PurchasedAt: time.Now(),
+			PurchasedAt: time.Now().UTC().UnixMilli(),
 		}
 
 		tx.Table("nft_purchase_history").Create(&nft_history)

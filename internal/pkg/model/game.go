@@ -1,9 +1,5 @@
 package model
 
-import (
-	"time"
-)
-
 type Game struct {
 	Id           uint64
 	FlowId       uint64
@@ -11,8 +7,8 @@ type Game struct {
 	ChallengerId *uint64
 	GameStatus   GameStatus
 	Stake        uint64
-	TimeStarted  time.Time
-	TimeCreated  time.Time
+	TimeStarted  int64
+	TimeCreated  int64
 	WinnerId     *uint64
 }
 
