@@ -27,9 +27,8 @@ func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 	}
 
 	routes := rg.Group("/game")
-	// routes.GET("/", handler.getGames)
-	routes.POST("", middleware.VerifyAuthToken, handler.createGame)
 	routes.GET("", middleware.VerifyAuthToken, handler.getGames)
+	routes.POST("", middleware.VerifyAuthToken, handler.createGame)
 
 	routes.GET("/:id/moves", middleware.VerifyAuthToken, handler.getMoves)
 	routes.POST("/:id/moves", middleware.VerifyAuthToken, handler.playMove)
@@ -79,9 +78,6 @@ func (gh *gameHandler) playMove(c *gin.Context) {
 // JOIN Game
 // JOIN game - gameID i PLACEMENTS -- create merkel -- tx join - CHECK BALANCE
 
-// MOVE endpoint
-//  kordinate za shoot se dobiju
-//  Poslat TX --> Koordinate, PROOF, ORIGINAL LIST
 func (gh *gameHandler) getGames(c *gin.Context) {
 	page, err := utils.NewPageRequest(c)
 	if err != nil {

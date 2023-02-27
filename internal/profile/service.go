@@ -107,14 +107,15 @@ func (s *ProfileService) FindByEmail(email string) (*Profile, *reject.ProblemWit
 	return &profile, nil
 }
 
-func (s *ProfileService) activateBlocks(userId uint64, body ActivateBlocksRequest) *reject.ProblemWithTrace {
+func (s *ProfileService) activateBlocks(userEmail string, body ActivateBlocksRequest) *reject.ProblemWithTrace {
 	err := s.Db.Transaction(func(tx *gorm.DB) error {
 		result := tx.Exec(
 			`UPDATE user_block_inventory 
                     SET active = true 
                   WHERE block_id IN ? 
                     AND block_id = false
-                    AND user_id = ?`, body.activeBlockIds, userId)
+                    AND user_id = (SELECT id FROM battleblocks_user WHERE email = ?)`, body.ActiveBlockIds, userEmail)
+
 		if result.Error != nil {
 			return result.Error
 		}
@@ -124,7 +125,8 @@ func (s *ProfileService) activateBlocks(userId uint64, body ActivateBlocksReques
                     SET active = false 
                   WHERE block_id NOT IN ? 
                     AND block_id = true
-                    AND user_id = ?`, body.activeBlockIds, userId)
+                    AND user_id = (SELECT id FROM battleblocks_user WHERE email = ?)`, body.ActiveBlockIds, userEmail)
+
 		if result.Error != nil {
 			return result.Error
 		}

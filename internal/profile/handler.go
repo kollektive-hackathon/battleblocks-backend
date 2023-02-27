@@ -1,14 +1,12 @@
 package profile
 
 import (
-	"net/http"
-	"strconv"
-
 	"github.com/gin-gonic/gin"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
 	"gorm.io/gorm"
+	"net/http"
 )
 
 type profileHandler struct {
@@ -22,7 +20,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 
 	routes := rg.Group("/profile")
 	routes.GET("", middleware.VerifyAuthToken, handler.getProfile)
-	routes.PUT("/:id/blocks", middleware.VerifyAuthToken, handler.activateBlock)
+	routes.PUT("/blocks", middleware.VerifyAuthToken, handler.activateBlock)
 }
 
 func (h profileHandler) getProfile(c *gin.Context) {
@@ -38,15 +36,11 @@ func (h profileHandler) getProfile(c *gin.Context) {
 }
 
 type ActivateBlocksRequest struct {
-	activeBlockIds []uint64
+	ActiveBlockIds []uint64 `json:"activeBlockIds"`
 }
 
 func (h profileHandler) activateBlock(c *gin.Context) {
-	userId, parseErr := strconv.ParseUint(c.Param("id"), 0, 64)
-	if parseErr != nil {
-		c.JSON(http.StatusBadRequest, reject.RequestParamsProblem())
-		return
-	}
+	userEmail := utils.GetUserEmail(c)
 
 	body := ActivateBlocksRequest{}
 	if err := c.BindJSON(&body); err != nil {
@@ -54,7 +48,7 @@ func (h profileHandler) activateBlock(c *gin.Context) {
 		return
 	}
 
-	err := h.profile.activateBlocks(userId, body)
+	err := h.profile.activateBlocks(userEmail, body)
 	if err != nil {
 		c.JSON(err.Problem.Status, err.Problem)
 		return
