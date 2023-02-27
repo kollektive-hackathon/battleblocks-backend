@@ -72,6 +72,8 @@ func (gh *gameHandler) playMove(c *gin.Context) {
 	userEmail := utils.GetUserEmail(c)
 
 	gh.gameService.playMove(gameId, userEmail, body)
+
+	c.Status(http.StatusNoContent)
 }
 
 // JOIN Game
