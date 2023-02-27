@@ -33,7 +33,7 @@ func (cs *cosignService) VerifyAndSign(credentials auth.Token, request CosignReq
 
 	log.
 		Info().
-		Msg(fmt.Sprintf("Checking cosign transaction %+v", signable))
+		Msg(fmt.Sprintf("checking cosign transaction %+v", signable))
 
 	decodedData, err := hex.DecodeString(signable.Message[64:])
 
@@ -61,7 +61,7 @@ func (cs *cosignService) VerifyAndSign(credentials auth.Token, request CosignReq
 
 	log.
 		Debug().
-		Msg(fmt.Sprintf("Found custodial wallet %v", custodialWallet))
+		Msg(fmt.Sprintf("found custodial wallet %v", custodialWallet))
 
 	err = fmt.Errorf("invalid request: you are not authorized to request this signature")
 	return nil, &reject.ProblemWithTrace{

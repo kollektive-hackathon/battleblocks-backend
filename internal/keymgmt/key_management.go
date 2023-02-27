@@ -1,10 +1,11 @@
 package keymgmt
 
 import (
-	kms "cloud.google.com/go/kms/apiv1"
-	"cloud.google.com/go/kms/apiv1/kmspb"
 	"context"
 	"fmt"
+
+	kms "cloud.google.com/go/kms/apiv1"
+	"cloud.google.com/go/kms/apiv1/kmspb"
 	"github.com/google/uuid"
 	"github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go-sdk/crypto"
@@ -12,9 +13,10 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 
-	"github.com/jpillora/backoff"
 	"strings"
 	"time"
+
+	"github.com/jpillora/backoff"
 )
 
 type PrivateKey struct {
@@ -66,7 +68,7 @@ func GenerateAsymetricKey(ctx context.Context, keyIndex, weight int) (*flow.Acco
 		HashAlgo: *h,
 	}
 
-	rid := fmt.Sprintf("%s/%s/cryptoKeyVersions/1", gcpKmsKeyringPath, generatedKeyName)
+	rid := fmt.Sprintf("%s/cryptoKeys/%s/cryptoKeyVersions/1", gcpKmsKeyringPath, generatedKeyName)
 
 	return f, p, &rid, nil
 }
