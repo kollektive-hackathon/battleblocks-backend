@@ -441,8 +441,8 @@ func checkBalance(address string) (string, error) {
 
 	balance, err := c.ExecuteScriptAtLatestBlock(context.Background(), []byte(
 		`
-		import FungibleToken from 0xFUNGIBLE_TOKEN_ADDRESS
-		import FlowToken from 0xFLOW_TOKEN_ADDRESS
+		import FungibleToken from 0x9a0766d93b6608b7
+		import FlowToken from 0x7e60df042a9c0868
 
 		pub fun main(account: Address): UFix64 {
 
