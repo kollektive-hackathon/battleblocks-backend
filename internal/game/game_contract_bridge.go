@@ -245,6 +245,7 @@ func (b *gameContractBridge) handleChallengerJoined(_ context.Context, m *gcppub
 				Where("flow_id = ?", messagePayload.GameId).
 				Updates(map[string]any{
 					"challenger_id": user.Id,
+					"game_status":   "PLAYING",
 					"turn":          messagePayload.Turn,
 				})
 
@@ -256,8 +257,24 @@ func (b *gameContractBridge) handleChallengerJoined(_ context.Context, m *gcppub
 			return nil
 
 		})
+		m.Ack()
 
+		game, err := b.findGameByFlowID(messagePayload.GameId)
+		if err != nil {
+			log.Warn().Err(err).Msg("Error while sending ChallengerJoined ws message")
+			return
+		}
+		wsEvent := map[string]any{
+			"type": "CHALLENGER_JOINED",
+			"payload": map[string]any{
+				"turn": messagePayload.Turn,
+				"gameStatus": "PLAYING",
+			},
+		}
+
+		b.notificationHub.Publish(fmt.Sprintf("game/%d", game.Id), wsEvent)
 	}
+
 }
 
 func (b *gameContractBridge) handleGameOver(_ context.Context, message *gcppubsub.Message) {
