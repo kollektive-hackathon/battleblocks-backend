@@ -467,9 +467,6 @@ func checkBalance(address string) (string, error) {
 	var adr [8]byte
 	copy(adr[:], address)
 
-	fmt.Printf("txCode: %s\n", txCode)
-	fmt.Printf("address: %s\n", address)
-
 	flowAddress := flow.HexToAddress(address)
 
 	args := []cadence.Value{cadence.Address(flowAddress)}
