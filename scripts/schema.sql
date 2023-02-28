@@ -53,12 +53,12 @@ CREATE TABLE game
     stake              BIGINT      NOT NULL,
     time_started       BIGINT,
     time_created       BIGINT,
-    winner             BIGINT
+    winner_id          BIGINT
 );
 
 CREATE TABLE block_placement
 (
-    id          BIGINT PRIMARY KEY,
+    id          BIGSERIAL PRIMARY KEY,
     user_id     BIGINT  NOT NULL,
     game_id     BIGINT  NOT NULL,
     block_id    BIGINT  NOT NULL,
@@ -128,5 +128,5 @@ CREATE TABLE game_grid_point (
     coordinate_y INTEGER NOT NULL,
     nonce text NOT NULL,
 
-    PRIMARY KEY (game_id, user_id)
+    PRIMARY KEY (game_id, user_id, coordinate_x, coordinate_y)
 );

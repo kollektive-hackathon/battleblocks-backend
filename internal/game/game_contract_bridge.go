@@ -70,11 +70,12 @@ func (b *gameContractBridge) sendJoinGame(stake float32, rootMerkel string, game
 	pubsub.Publish(cmd)
 }
 
-func (b *gameContractBridge) sendCreateGameTx(stake float32, rootMerkel string, userAuthorizer blockchain.Authorizer) {
+func (b *gameContractBridge) sendCreateGameTx(stake float32, rootMerkel []byte, gameId uint64, userAuthorizer blockchain.Authorizer) {
 	commandType := "GAME_CREATE"
 	payload := []any{
 		stake,
 		rootMerkel,
+		gameId,
 	}
 	authorizers := []blockchain.Authorizer{userAuthorizer, blockchain.GetAdminAuthorizer()}
 	cmd := blockchain.NewBlockchainCommand(commandType, payload, authorizers)
@@ -176,7 +177,7 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 
 	timeNow := time.Now().UTC()
 	game := model.Game{
-		FlowId:      messagePayload.Payload,
+		FlowId:      &messagePayload.Payload,
 		OwnerId:     messagePayload.CreatorId,
 		GameStatus:  "CREATED",
 		Stake:       messagePayload.Stake,

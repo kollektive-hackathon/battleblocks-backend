@@ -2,7 +2,7 @@ package model
 
 type Game struct {
 	Id           uint64
-	FlowId       uint64
+	FlowId       *uint64
 	OwnerId      uint64
 	ChallengerId *uint64
 	GameStatus   GameStatus

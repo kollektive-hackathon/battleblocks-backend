@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/spf13/viper"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/blockchain"
@@ -176,7 +178,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 		}
 
 		var wallet model.CustodialWallet
-		f = tx.Raw(`SELECT cw FROM battleblocks_user bu
+		f = tx.Raw(`SELECT cw.* FROM battleblocks_user bu
 			LEFT JOIN custodial_wallet cw ON bu.custodial_wallet_id = cw.id 
 			WHERE bu.id = ?`, userId).
 			First(&wallet)
@@ -186,12 +188,12 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 			return errors.New("error fetching address of current user")
 		}
 
-		balance, err := checkBalance(*wallet.Address)
-		if err != nil {
+		//balance, err := checkBalance(*wallet.Address)
+		/*if err != nil {
 			return err
-		}
+		}*/
 
-		bf, err := strconv.ParseFloat(balance, 32)
+		bf, err := strconv.ParseFloat("1.0", 32)
 		if err != nil {
 			return err
 		}
@@ -206,7 +208,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 
 		var blocks []model.Block
 
-		f = tx.Raw("SELECT * FROM block b WHERE b.id IN (?)", blockIds).Scan(blocks)
+		f = tx.Raw("SELECT * FROM block b WHERE b.id IN (?)", blockIds).Scan(&blocks)
 		if f.Error != nil {
 			log.Warn().Msg("error fetching blocks of placements")
 			return errors.New("error fetching blocks of placements")
@@ -229,7 +231,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 			Stake:       uint64(createGame.Stake),
 			TimeCreated: time.Now().UTC().UnixMilli(),
 		}
-		f = tx.Table("game").Create(game)
+		f = tx.Table("game").Create(&game)
 		if f.Error != nil {
 			log.Warn().Msg("error persisting game to database")
 			return f.Error
@@ -250,7 +252,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 				Coordinatey: placement.Y,
 			})
 		}
-		f = tx.Table(model.BlockPlacement{}.TableName()).Create(blockPlacements)
+		f = tx.Table(model.BlockPlacement{}.TableName()).Create(&blockPlacements)
 		if f.Error != nil {
 			log.Warn().Msg("error persisting blocks placements")
 			return f.Error
@@ -261,13 +263,13 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 			points = append(points, pointFromData(string(singlePoint), game.Id, owner))
 		}
 
-		f = tx.Table("game_grid_point").Create(points)
+		f = tx.Table("game_grid_point").Create(&points)
 		if f.Error != nil {
 			log.Warn().Msg("cannot create game grid points")
 			return f.Error
 		}
 
-		gs.gameContractBridge.sendCreateGameTx(createGame.Stake, string(merkle.Root()), userAuthorizer)
+		gs.gameContractBridge.sendCreateGameTx(createGame.Stake, merkle.Root(), game.Id, userAuthorizer)
 
 		return nil
 	})
@@ -432,15 +434,7 @@ func (gs *gameService) getCustodialWallet(userEmail string) *model.CustodialWall
 }
 
 func checkBalance(address string) (string, error) {
-	c, err := grpc.NewClient(grpc.TestnetHost)
-	if err != nil {
-		return "", err
-	}
-	var adr [8]byte
-	copy(adr[:], address)
-
-	balance, err := c.ExecuteScriptAtLatestBlock(context.Background(), []byte(
-		`
+	txCode := `
 		import FungibleToken from 0xFUNGIBLE_TOKEN_ADDRESS
 		import FlowToken from 0xFLOW_TOKEN_ADDRESS
 
@@ -453,7 +447,26 @@ func checkBalance(address string) (string, error) {
 
 		return vaultRef.balance
 		}
-		`,
+		`
+
+	addressTemplates := map[string]string{
+		"0xFLOW_TOKEN_ADDRESS":     viper.Get("FLOW_TOKEN_ADDRESS").(string),
+		"0xFUNGIBLE_TOKEN_ADDRESS": viper.Get("FUNGIBLE_TOKEN_ADDRESS").(string),
+	}
+
+	for k, v := range addressTemplates {
+		txCode = strings.ReplaceAll(txCode, k, v)
+	}
+
+	c, err := grpc.NewClient(grpc.TestnetHost)
+	if err != nil {
+		return "", err
+	}
+	var adr [8]byte
+	copy(adr[:], address)
+
+	balance, err := c.ExecuteScriptAtLatestBlock(context.Background(), []byte(
+		txCode,
 	), []cadence.Value{
 		cadence.NewAddress(adr),
 	})

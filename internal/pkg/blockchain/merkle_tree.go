@@ -47,11 +47,14 @@ func CreateMerkleTreeNode(x, y int32, present bool, nonce string) string {
 }
 
 func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64]model.Block) (*merkletree.MerkleTree, [][]byte, error) {
-	var li [][]string
+	li := make([][]string, 10)
+	for i := range li {
+		li[i] = make([]string, 10)
+	}
 
 	for i := 0; i < 10; i++ {
 		for j := 0; j < 10; j++ {
-			nodeInStr := CreateMerkleTreeNode(int32(i), int32(j), true, randomString())
+			nodeInStr := CreateMerkleTreeNode(int32(i), int32(j), false, randomString())
 			li[i][j] = nodeInStr
 		}
 	}
@@ -65,13 +68,13 @@ func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64
 		for _, single := range firstRow {
 			singleNr, _ := strconv.ParseUint(string(single), 10, 32)
 			nodeInStr := CreateMerkleTreeNode(int32(placement.X)+(int32(singleNr)-1), int32(placement.Y), true, randomString())
-			li[int32(placement.X)+int32(singleNr)][int32(placement.Y)] = nodeInStr
+			li[int32(placement.X)+int32(singleNr)-1][int32(placement.Y)] = nodeInStr
 		}
 
 		for _, single := range secondRow {
 			singleNr, _ := strconv.ParseUint(string(single), 10, 32)
-			nodeInStr := CreateMerkleTreeNode(int32(placement.X), int32(placement.Y)+(int32(singleNr)-1), true, randomString())
-			li[int32(placement.X)][int32(placement.Y)+int32(singleNr)] = nodeInStr
+			nodeInStr := CreateMerkleTreeNode(int32(placement.X)+int32(singleNr)-1, int32(placement.Y)+1, true, randomString())
+			li[int32(placement.X)+int32(singleNr)-1][int32(placement.Y)+1] = nodeInStr
 		}
 	}
 
