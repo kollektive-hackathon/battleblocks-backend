@@ -460,7 +460,8 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		userAuthorizer := blockchain.Authorizer{KmsResourceId: cw.ResourceId, ResourceOwnerAddress: *cw.Address}
 
 		if opponentProofData == nil {
-			gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, nil,
+			fProof := [][]uint8{{}}
+			gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, fProof,
 				nil, nil, nil, nil, userAuthorizer)
 		}
 		return nil
@@ -500,7 +501,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 	userAuthorizer := blockchain.Authorizer{KmsResourceId: cw.ResourceId, ResourceOwnerAddress: *cw.Address}
 
 	nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 0, 64)
-	gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, &proof.Hashes,
+	gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, proof.Hashes,
 		&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber, userAuthorizer)
 
 	return nil

@@ -93,7 +93,7 @@ func (b *gameContractBridge) sendMove(
 	gameId uint64,
 	guessX uint64,
 	guessY uint64,
-	proof *[][]uint8,
+	proof [][]uint8,
 	blockPresent *bool,
 	opponentGuessX *uint64,
 	opponentGuessY *uint64,
@@ -102,7 +102,7 @@ func (b *gameContractBridge) sendMove(
 ) {
 	var uint64Proof [][]uint64
 	if proof != nil {
-		uint64Proof = twoDimensionalbyteArrayToTwoDimensionalUint64Array(*proof)
+		uint64Proof = twoDimensionalbyteArrayToTwoDimensionalUint64Array(proof)
 	}
 
 	commandType := "GAME_MOVE"
