@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/spf13/viper"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/spf13/viper"
 
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/blockchain"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
@@ -464,6 +465,11 @@ func checkBalance(address string) (string, error) {
 	}
 	var adr [8]byte
 	copy(adr[:], address)
+
+	log.Debug().
+		Msgf("script code %s, adr raw %v, adr cdc %v", txCode, adr, []cadence.Value{
+			cadence.NewAddress(adr),
+		})
 
 	balance, err := c.ExecuteScriptAtLatestBlock(context.Background(), []byte(
 		txCode,
