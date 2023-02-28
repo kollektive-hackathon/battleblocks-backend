@@ -57,7 +57,7 @@ func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]Gam
 
 		tx.Table("game").Joins("JOIN battleblocks_user AS owner ON game.owner_id = owner.id").
 			Joins("LEFT JOIN battleblocks_user AS challenger ON game.challenger_id = challenger.id").
-			Select("game.*, owner.name AS owner_name, challenger.name AS challenger_name").
+			Select("game.*, owner.username AS owner_name, challenger.username AS challenger_name").
 			Where("game.game_status IN ('CREATED', 'PLAYING')").
 			Limit(page.Size).
 			Offset(page.Offset).
