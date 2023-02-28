@@ -121,6 +121,19 @@ func (gs *gameService) joinGame(joinGame JoinGameRequest, gameId uint64, userEma
 			return errors.New("wallet does not exist")
 		}
 
+		balance, err := checkBalance(*wallet.Address)
+		if err != nil {
+			return err
+		}
+
+		bf, err := strconv.ParseFloat(balance, 32)
+		if err != nil {
+			return err
+		}
+		if float32(bf) < (float32(game.Stake) + 1) {
+			return errors.New("user not allowed to create game with indicated stake")
+		}
+
 		blockIds := []uint64{}
 		for _, placement := range joinGame.Placements {
 			blockIds = append(blockIds, placement.BlockId)
