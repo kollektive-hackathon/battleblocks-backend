@@ -31,6 +31,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 
 	routes := rg.Group("/game")
 	routes.GET("", middleware.VerifyAuthToken, handler.getGames)
+	routes.GET("/:id", middleware.VerifyAuthToken, handler.getGame)
 	routes.POST("", middleware.VerifyAuthToken, handler.createGame)
 	routes.POST("/:id/join", middleware.VerifyAuthToken, handler.joinGame)
 
@@ -99,6 +100,20 @@ func (gh *gameHandler) playMove(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (gh *gameHandler) getGame(c *gin.Context) {
+	gameId, parseErr := strconv.ParseUint(c.Param("id"), 0, 64)
+	if parseErr != nil {
+		c.JSON(http.StatusBadRequest, reject.RequestParamsProblem())
+		return
+	}
+	game, err := gh.gameService.getGame(gameId)
+	if err != nil {
+		c.JSON(err.Problem.Status, err.Problem)
+		return
+	}
+
+	c.JSON(http.StatusOK, game)
+}
 func (gh *gameHandler) getGames(c *gin.Context) {
 	page, err := utils.NewPageRequest(c)
 	if err != nil {
@@ -137,6 +152,7 @@ func (gh *gameHandler) createGame(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(err.Problem.Status, err.Problem)
+		return
 	}
 
 	c.JSON(http.StatusOK, createdGame)
