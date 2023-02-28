@@ -44,7 +44,7 @@ func (ss *shopService) SendBoughtToUser(userId, blockId string) {
 		}
 
 		var wallet model.CustodialWallet
-		result = tx.Raw(`SELECT cw FROM battleblocks_user bu
+		result = tx.Raw(`SELECT cw.* FROM battleblocks_user bu
 			LEFT JOIN custodial_wallet cw ON bu.custodial_wallet_id = cw.id
 			WHERE bu.id = ?`, userId).
 			First(&wallet)
