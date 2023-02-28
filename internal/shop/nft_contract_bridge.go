@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strconv"
 	"time"
 
 	gcppubsub "cloud.google.com/go/pubsub"
@@ -18,7 +17,7 @@ import (
 type MintedEvent struct {
 	To   string `json:"to"`
 	Name string `json:"name"`
-	Id   string `json:"id"`
+	Id   uint64 `json:"id"`
 }
 
 type nftContractBridge struct {
@@ -79,7 +78,7 @@ func (b *nftContractBridge) handleMinted(_ context.Context, m *gcppubsub.Message
 	err := json.Unmarshal(m.Data, &eventData)
 
 	if err != nil {
-		log.Warn().Msg("Could not unmarshal minted event data")
+		log.Warn().Err(err).Msg("Could not unmarshal minted event data")
 		return
 	}
 
@@ -103,7 +102,7 @@ func (b *nftContractBridge) handleMinted(_ context.Context, m *gcppubsub.Message
 
 		// Insert NFT on user with TO
 		// Insert NFT purchase history
-		flowId, _ := strconv.ParseUint(eventData.Id, 10, 64)
+		flowId := eventData.Id
 		nft := model.Nft{
 			FlowId:  flowId,
 			BlockId: block.Id,
