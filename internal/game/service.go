@@ -310,7 +310,7 @@ func (gs *gameService) getGame(gameId uint64) (*model.Game , *reject.ProblemWith
 	var game *model.Game
 	result := gs.db.
 		Model(&model.Game{}).
-		Where("game_id = ?", gameId).
+		Where("id = ?", gameId).
 		Find(&game)
 
 	if result.Error != nil {
