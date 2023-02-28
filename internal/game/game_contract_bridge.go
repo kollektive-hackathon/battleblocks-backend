@@ -268,7 +268,7 @@ func (b *gameContractBridge) handleChallengerJoined(_ context.Context, m *gcppub
 			"type": "CHALLENGER_JOINED",
 			"payload": map[string]any{
 				"turn": messagePayload.Turn,
-				"gameStatus": "PLAYING",
+				"game_status": "PLAYING",
 			},
 		}
 
