@@ -129,11 +129,15 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 		return
 	}
 
-	// TODO: gameId in the message is flowId, use that instead to get game id from db
+	game, err := b.findGameByFlowID(messagePayload.GameId)
+	if err != nil {
+		log.Warn().Err(err).Msg("Error while sending ChallengerJoined ws message")
+		return
+	}
 
 	mh := model.MoveHistory{
 		UserId:      messagePayload.PlayerId,
-		GameId:      messagePayload.GameId,
+		GameId:      game.Id,
 		CoordinateX: messagePayload.X,
 		CoordinateY: messagePayload.Y,
 		PlayedAt:    time.Now().UTC().UnixMilli(),
@@ -195,18 +199,6 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 		Updates(map[string]any{
 			"flow_id": messagePayload.Payload,
 		})
-
-	//TODO : ---
-	// timeNow := time.Now().UTC()
-	// game := model.Game{
-	// FlowId:      &messagePayload.Payload,
-	// OwnerId:     messagePayload.CreatorId,
-	// GameStatus:  "CREATED",
-	// Stake:       messagePayload.Stake,
-	// TimeCreated: timeNow.UnixMilli(),
-	// }
-	// UPDATE flow ID
-	// -----------
 
 	if result.Error != nil {
 		log.Warn().Err(result.Error).Msg("Error while handling GameCreated")
