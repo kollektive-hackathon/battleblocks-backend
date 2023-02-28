@@ -34,8 +34,8 @@ type gameService struct {
 
 type GameResponse struct {
 	model.Game
-	owner_name      *string
-	challenger_name *string
+	OwnerName      *string `json:"ownerUsername"`
+	ChallengerName *string `json:"challengerUsername"`
 }
 
 func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]GameResponse, *int64, *reject.ProblemWithTrace) {
@@ -50,6 +50,7 @@ func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]Gam
 		}
 
 		res := tx.Table("game").
+			Where("game.game_status IN ('CREATED', 'PLAYING')").
 			Count(&gamesSize)
 		if res.Error != nil {
 			return res.Error
