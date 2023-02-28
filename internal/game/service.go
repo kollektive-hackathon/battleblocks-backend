@@ -189,18 +189,18 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 			return errors.New("error fetching address of current user")
 		}
 
-		// balance, err := checkBalance(*wallet.Address)
-		// if err != nil {
-		//	return err
-		// }
+		balance, err := checkBalance(*wallet.Address)
+		if err != nil {
+			return err
+		}
 
-		// bf, err := strconv.ParseFloat(balance, 32)
-		// if err != nil {
-		//	return err
-		// }
-		// if float32(bf) < createGame.Stake {
-		//	return errors.New("user not allowed to create game with indicated stake")
-		// }
+		bf, err := strconv.ParseFloat(balance, 32)
+		if err != nil {
+			return err
+		}
+		if float32(bf) < createGame.Stake {
+			return errors.New("user not allowed to create game with indicated stake")
+		}
 
 		blockIds := []uint64{}
 		for _, placement := range createGame.Placements {
@@ -465,6 +465,9 @@ func checkBalance(address string) (string, error) {
 	}
 	var adr [8]byte
 	copy(adr[:], address)
+
+	fmt.Printf("txCode: %s\n", txCode)
+	fmt.Printf("address: %s\n", address)
 
 	balance, err := c.ExecuteScriptAtLatestBlock(context.Background(), []byte(
 		txCode,
