@@ -198,7 +198,7 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 		Where("id = ?", messagePayload.Payload).
 		Updates(map[string]any{
 			"flow_id": messagePayload.GameId,
-			"status":  "CREATED",
+			"game_status":  "CREATED",
 		})
 
 	if result.Error != nil {

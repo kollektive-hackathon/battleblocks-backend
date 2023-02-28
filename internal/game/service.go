@@ -200,7 +200,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 		if err != nil {
 			return err
 		}
-		if float32(bf) < createGame.Stake {
+		if float32(bf) < (createGame.Stake + 1){
 			return errors.New("user not allowed to create game with indicated stake")
 		}
 
