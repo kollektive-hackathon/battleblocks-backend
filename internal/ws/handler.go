@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/ws"
 	"github.com/rs/zerolog/log"
 )
@@ -24,8 +23,8 @@ func RegisterRoutes(rg *gin.RouterGroup) {
 	}
 
 	routes := rg.Group("/ws")
-	routes.GET("/game/:id", middleware.VerifyAuthToken, handler.serveGameWs)
-	routes.GET("/registration/:userEmail", middleware.VerifyAuthToken, handler.serveRegistrationWs)
+	routes.GET("/game/:id", handler.serveGameWs)
+	routes.GET("/registration/:userEmail", handler.serveRegistrationWs)
 }
 
 func (wsh *wsHandler) serveGameWs(c *gin.Context) {
