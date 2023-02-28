@@ -325,12 +325,11 @@ func (gs *gameService) getPlacements(gameId uint64, userEmail string) ([]model.B
 	return placements, nil
 }
 
-//TODO add enemy moves also
 func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHistory, *reject.ProblemWithTrace) {
 	var moves []model.MoveHistory
 	result := gs.db.
 		Model(&model.MoveHistory{}).
-		Where("game_id = ? AND user_id = (SELECT id FROM battleblocks_user WHERE email = ?) ORDER BY played_at", gameId, userEmail).
+		Where("game_id = ? ORDER BY played_at", gameId, userEmail).
 		Find(&moves)
 
 	if result.Error != nil {
