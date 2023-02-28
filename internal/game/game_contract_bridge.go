@@ -197,8 +197,8 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 		Model(&model.Game{}).
 		Where("id = ?", messagePayload.GameId).
 		Updates(map[string]any{
-			"flow_id": messagePayload.Payload,
-			"status": "CREATED",
+			"flow_id":     messagePayload.Payload,
+			"game_status": "CREATED",
 		})
 
 	if result.Error != nil {
@@ -297,19 +297,18 @@ func (b *gameContractBridge) handleGameOver(_ context.Context, message *gcppubsu
 		return
 	}
 
-	var game model.Game
-	f := b.db.Model(&model.Game{}).
-		Where("flow_id = ?", messagePayload.GameId).
-		First(&game)
-
-	message.Ack()
-
-	if f.Error != nil {
-		log.Warn().Err(result.Error).Msg("Error while sending websocket for gameover")
+	game, err := b.findGameByFlowID(messagePayload.GameId)
+	if err != nil {
+		log.Warn().Err(err).Msg("Error while sending ChallengerJoined ws message")
 		return
 	}
 
-	// TODO: find gameId by flowId
+	message.Ack()
+
+	if err != nil {
+		log.Warn().Err(result.Error).Msg("Error while sending ChallengerJoined ws message")
+		return
+	}
 
 	wsEvent := map[string]any{
 		"type": "GAME_OVER",
