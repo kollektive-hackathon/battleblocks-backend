@@ -287,6 +287,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 	return createdGame, nil
 }
 
+//TODO add enemy moves also 
 func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHistory, *reject.ProblemWithTrace) {
 	var moves []model.MoveHistory
 	result := gs.db.
@@ -302,6 +303,24 @@ func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHi
 	}
 
 	return moves, nil
+}
+
+
+func (gs *gameService) getGame(gameId uint64) (*model.Game , *reject.ProblemWithTrace) {
+	var game *model.Game
+	result := gs.db.
+		Model(&model.Game{}).
+		Where("game_id = ?", gameId).
+		Find(&game)
+
+	if result.Error != nil {
+		return nil, &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(result.Error),
+			Cause:   result.Error,
+		}
+	}
+
+	return game, nil
 }
 
 func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMoveRequest) *reject.ProblemWithTrace {
