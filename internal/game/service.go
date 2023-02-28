@@ -324,12 +324,21 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 	return createdGame, nil
 }
 
-func (gs *gameService) getPlacements(gameId uint64, userEmail string) ([]model.BlockPlacement, *reject.ProblemWithTrace) {
-	var placements []model.BlockPlacement
-	result := gs.db.
-		Model(&model.BlockPlacement{}).
-		Where("game_id = ? AND user_id = (SELECT id FROM battleblocks_user WHERE email = ?)", gameId, userEmail).
-		Find(&placements)
+type PlacementsView struct {
+	ColorHex  string `json:"colorHex"`
+	X         string `json:"x"`
+	Y         string `json:"y"`
+	BlockType string `json:"blockType"`
+}
+
+func (gs *gameService) getPlacements(gameId uint64, userEmail string) ([]PlacementsView, *reject.ProblemWithTrace) {
+	var placements []PlacementsView
+
+	result := gs.db.Raw(`SELECT b.color_hex as color_hex, b.block_type as block_type, bp.coordinatex as X, bp.coordinatey as Y 
+		FROM block_placement bp
+		JOIN block b on bp.block_id = b.id
+		WHERE game_id = ? AND user_id =
+		(SELECT id FROM battleblocks_user WHERE email = ?)`, gameId, userEmail).Find(&placements)
 
 	if result.Error != nil {
 		return nil, &reject.ProblemWithTrace{
