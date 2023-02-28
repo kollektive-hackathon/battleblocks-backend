@@ -434,7 +434,28 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 	}
 
 	opponentProofData, proofDataLoadErr := gs.getLastOpponentMoveProofData(gameId, userEmail)
+
+	if errors.Is(proofDataLoadErr, gorm.ErrRecordNotFound) {
+		cw := gs.getCustodialWallet(userEmail)
+		if cw == nil {
+			walletNotExistsErr := fmt.Errorf("custodial wallet not found while making move, user email %s", userEmail)
+			return &reject.ProblemWithTrace{
+				Problem: reject.UnexpectedProblem(walletNotExistsErr),
+				Cause:   walletNotExistsErr,
+			}
+		}
+
+		userAuthorizer := blockchain.Authorizer{KmsResourceId: cw.ResourceId, ResourceOwnerAddress: *cw.Address}
+
+		if opponentProofData == nil {
+			gs.gameContractBridge.sendMove(gameId, request.X, request.Y, nil,
+				nil, nil, nil, nil, userAuthorizer)
+		}
+		return nil
+	}
+
 	if proofDataLoadErr != nil {
+		log.Info().Msg("Could not fetch last opponent data")
 		return &reject.ProblemWithTrace{
 			Problem: reject.UnexpectedProblem(result.Error),
 			Cause:   result.Error,
@@ -465,19 +486,15 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 	}
 
 	userAuthorizer := blockchain.Authorizer{KmsResourceId: cw.ResourceId, ResourceOwnerAddress: *cw.Address}
-	if opponentProofData == nil {
-		gs.gameContractBridge.sendMove(gameId, request.X, request.Y, nil,
-			nil, nil, nil, nil, userAuthorizer)
-	} else {
-		nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 0, 64)
-		gs.gameContractBridge.sendMove(gameId, request.X, request.Y, &proof.Hashes,
-			&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber, userAuthorizer)
-	}
+
+	nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 0, 64)
+	gs.gameContractBridge.sendMove(gameId, request.X, request.Y, &proof.Hashes,
+		&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber, userAuthorizer)
 
 	return nil
 }
 
-func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, userEmail string) (*model.GameGridPoint, *reject.ProblemWithTrace) {
+func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, userEmail string) (*model.GameGridPoint, error) {
 	var proofData model.GameGridPoint
 	result := gs.db.Raw(`
 		SELECT game_grid_point.game_id
@@ -493,13 +510,10 @@ func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, userEmail str
          WHERE move_history.game_id = ?
            AND move_history.user_id = (SELECT id FROM battleblocks_user WHERE email = ?)
 	ORDER BY played_at DESC LIMIT 1
-    `, gameId, userEmail).Scan(&proofData)
+    `, gameId, userEmail).First(&proofData)
 
 	if result.Error != nil {
-		return nil, &reject.ProblemWithTrace{
-			Problem: reject.UnexpectedProblem(result.Error),
-			Cause:   result.Error,
-		}
+		return nil, result.Error
 	}
 
 	return &proofData, nil
