@@ -17,6 +17,15 @@ type shopHandler struct {
 	shop shopService
 }
 
+type PPData struct {
+	Resource struct {
+		PurchaseUnits []struct {
+			BlockId    string `json:"custom_id"`
+			UserId string `json:"description"`
+		} `json:"purchase_units"`
+	} `json:"resource"`
+}
+
 func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 	handler := shopHandler{
 		shop: shopService{
@@ -49,14 +58,12 @@ func (h shopHandler) getShopList(c *gin.Context) {
 
 func (h shopHandler) paypalWebhook(c *gin.Context) {
 	rawBody, _ := ioutil.ReadAll(c.Request.Body)
-	var body map[string]any
-	json.Unmarshal(rawBody, &body)
-	log.Info().Interface("pp_data", body).Msg("Pp data--")
+	var data PPData
+	json.Unmarshal(rawBody, &data)
+	log.Info().Interface("pp_data", data).Msg("Pp data--")
 
-	// description -- user id
-	// custom_id -- item id
-	userId := body["description"].(string)
-	blockId := body["custom_id"].(string)
+	userId := data.Resource.PurchaseUnits[0].UserId
+	blockId := data.Resource.PurchaseUnits[0].BlockId
 
 	h.shop.SendBoughtToUser(userId, blockId)
 }
