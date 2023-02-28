@@ -5,7 +5,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
-	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/ws"
 	"github.com/rs/zerolog/log"
 )
@@ -26,7 +25,7 @@ func RegisterRoutes(rg *gin.RouterGroup) {
 
 	routes := rg.Group("/ws")
 	routes.GET("/game/:id", middleware.VerifyAuthToken, handler.serveGameWs)
-	routes.GET("/registration", middleware.VerifyAuthToken, handler.serveRegistrationWs)
+	routes.GET("/registration/:userEmail", middleware.VerifyAuthToken, handler.serveRegistrationWs)
 }
 
 func (wsh *wsHandler) serveGameWs(c *gin.Context) {
@@ -47,7 +46,8 @@ func (wsh *wsHandler) serveGameWs(c *gin.Context) {
 }
 
 func (wsh *wsHandler) serveRegistrationWs(c *gin.Context) {
-	userEmail := utils.GetUserEmail(c)
+	//userEmail := utils.GetUserEmail(c)
+	userEmail := c.Param("userEmail")
 	conn, _ := upgrader.Upgrade(c.Writer, c.Request, nil)
 	defer wsh.notificationHub.UnregisterListener(fmt.Sprintf("registration/%s", userEmail), conn)
 
