@@ -79,12 +79,12 @@ func (b *gameContractBridge) sendCreateGameTx(stake float32, rootMerkel []byte, 
 	// create buffer from byte array
 	buffer := bytes.NewReader(rootMerkel)
 
-	// read bytes from buffer as uint8
-	uint8Merkle := make([]uint8, len(rootMerkel))
+	// read bytes from buffer as uint64
+	uint8Merkle := make([]uint64, len(rootMerkel))
 	for i := 0; i < len(uint8Merkle); i++ {
 		var num uint8
 		binary.Read(buffer, binary.BigEndian, &num)
-		uint8Merkle[i] = num
+		uint8Merkle[i] = uint64(num)
 	}
 
 	payload := []any{
