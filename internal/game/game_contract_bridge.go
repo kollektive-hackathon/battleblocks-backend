@@ -1,12 +1,15 @@
 package game
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"fmt"
+	"time"
+
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/blockchain"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/pubsub"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/ws"
-	"time"
 
 	gcppubsub "cloud.google.com/go/pubsub"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
@@ -70,11 +73,23 @@ func (b *gameContractBridge) sendJoinGame(stake float32, rootMerkel []uint8, gam
 	pubsub.Publish(cmd)
 }
 
-func (b *gameContractBridge) sendCreateGameTx(stake float32, rootMerkel []uint8, gameId uint64, userAuthorizer blockchain.Authorizer) {
+func (b *gameContractBridge) sendCreateGameTx(stake float32, rootMerkel []byte, gameId uint64, userAuthorizer blockchain.Authorizer) {
 	commandType := "GAME_CREATE"
+
+	// create buffer from byte array
+	buffer := bytes.NewReader(rootMerkel)
+
+	// read bytes from buffer as uint8
+	uint8Merkle := make([]uint8, len(rootMerkel))
+	for i := 0; i < len(uint8Merkle); i++ {
+		var num uint8
+		binary.Read(buffer, binary.BigEndian, &num)
+		uint8Merkle[i] = num
+	}
+
 	payload := []any{
 		stake,
-		rootMerkel,
+		uint8Merkle,
 		gameId,
 	}
 	authorizers := []blockchain.Authorizer{userAuthorizer, blockchain.GetAdminAuthorizer()}
