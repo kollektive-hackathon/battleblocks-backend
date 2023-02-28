@@ -467,7 +467,7 @@ func checkBalance(address string) (string, error) {
 	copy(adr[:], address)
 
 	log.Debug().
-		Msgf("script code %s, adr raw %v, adr cdc %v", txCode, adr, []cadence.Value{
+		Msgf("script code %v, addrs %s, adr raw %v, adr cdc %v", txCode, address, adr, []cadence.Value{
 			cadence.NewAddress(adr),
 		})
 
