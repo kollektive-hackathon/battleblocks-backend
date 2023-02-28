@@ -366,12 +366,16 @@ func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHi
 	return moves, nil
 }
 
-func (gs *gameService) getGame(gameId uint64) (*model.Game, *reject.ProblemWithTrace) {
-	var game *model.Game
+func (gs *gameService) getGame(gameId uint64) (*GameResponse, *reject.ProblemWithTrace) {
+	game := GameResponse{}
+
 	result := gs.db.
-		Model(&model.Game{}).
-		Where("id = ?", gameId).
-		Find(&game)
+		Table("game").
+		Joins("JOIN battleblocks_user AS owner ON game.owner_id = owner.id").
+		Joins("LEFT JOIN battleblocks_user AS challenger ON game.challenger_id = challenger.id").
+		Select("game.*, owner.username AS owner_name, challenger.username AS challenger_name").
+		Where("game.id = ?", gameId).
+		First(&game)
 
 	if result.Error != nil {
 		return nil, &reject.ProblemWithTrace{
@@ -380,7 +384,7 @@ func (gs *gameService) getGame(gameId uint64) (*model.Game, *reject.ProblemWithT
 		}
 	}
 
-	return game, nil
+	return &game, nil
 }
 
 func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMoveRequest) *reject.ProblemWithTrace {
