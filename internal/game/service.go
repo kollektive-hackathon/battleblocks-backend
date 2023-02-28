@@ -309,6 +309,22 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 	return createdGame, nil
 }
 
+func (gs *gameService) getPlacements(gameId uint64, userEmail string) ([]model.BlockPlacement, *reject.ProblemWithTrace) {
+	var placements []model.BlockPlacement
+	result := gs.db.
+		Model(&model.BlockPlacement{}).
+		Where("game_id = ? AND user_id = (SELECT id FROM battleblocks_user WHERE email = ?)", gameId, userEmail).
+		Find(&placements)
+
+	if result.Error != nil {
+		return nil, &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(result.Error),
+			Cause:   result.Error,
+		}
+	}
+	return placements, nil
+}
+
 //TODO add enemy moves also
 func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHistory, *reject.ProblemWithTrace) {
 	var moves []model.MoveHistory
