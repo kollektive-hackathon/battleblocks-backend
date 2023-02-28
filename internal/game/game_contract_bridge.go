@@ -21,7 +21,7 @@ import (
 type Moved struct {
 	GameId        uint64 `json:"gameID"`
 	PlayerId      uint64 `json:"gamePlayerID"`
-	PlayerAddress uint64 `json:"playerAddress"`
+	PlayerAddress string `json:"playerAddress"`
 	X             uint   `json:"coordinateX"`
 	Y             uint   `json:"coordinateY"`
 }
@@ -124,6 +124,8 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 		return
 	}
 
+	// TODO: gameId in the message is flowId, use that instead to get game id from db
+
 	mh := model.MoveHistory{
 		UserId:      messagePayload.PlayerId,
 		GameId:      messagePayload.GameId,
@@ -178,7 +180,7 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 	log.Info().Msg("Received message payload " + string(message.Data))
 	messagePayload, err := utils.JsonDecodeByteStream[GameCreated](message.Data)
 	if err != nil {
-		log.Warn().Err(err).Msg("Error while parsing GameOver message")
+		log.Warn().Err(err).Msg("Error while parsing GameCreated message")
 		return
 	}
 
@@ -202,7 +204,7 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 	// -----------
 
 	if result.Error != nil {
-		log.Warn().Err(result.Error).Msg("Error while handling GameOver")
+		log.Warn().Err(result.Error).Msg("Error while handling GameCreated")
 		return
 	}
 
@@ -223,7 +225,7 @@ func (b *gameContractBridge) handleChallengerJoined(_ context.Context, m *gcppub
 	log.Info().Msg("Received message payload " + string(m.Data))
 	messagePayload, err := utils.JsonDecodeByteStream[ChallengerJoined](m.Data)
 	if err != nil {
-		log.Warn().Err(err).Msg("Error while parsing GameOver message")
+		log.Warn().Err(err).Msg("Error while parsing ChallengedJoined message")
 		return
 	}
 	if messagePayload.PlayerB != nil {
@@ -292,6 +294,8 @@ func (b *gameContractBridge) handleGameOver(_ context.Context, message *gcppubsu
 		return
 	}
 
+	// TODO: find gameId by flowId
+
 	wsEvent := map[string]any{
 		"type": "GAME_OVER",
 		"payload": map[string]any{
@@ -300,6 +304,20 @@ func (b *gameContractBridge) handleGameOver(_ context.Context, message *gcppubsu
 		},
 	}
 	b.notificationHub.Publish(fmt.Sprintf("game/%d", game.Id), wsEvent)
+}
+
+func (b *gameContractBridge) findGameByFlowID(flowID uint64) (model.Game, error) {
+	var game model.Game
+	result := b.db.Model(&model.Game{}).
+		Where("flow_id = ?", flowID).
+		First(&game)
+
+	if result.Error != nil {
+		log.Warn().Err(result.Error).Msg("Error while fetching game by flow ID")
+		return game, result.Error
+	}
+
+	return game, nil
 }
 
 func byteArrayToUint(data []byte) []uint64 {
