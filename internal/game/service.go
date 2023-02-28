@@ -194,13 +194,13 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 		//	return err
 		// }
 
-		bf, err := strconv.ParseFloat(balance, 32)
-		if err != nil {
-			return err
-		}
-		if float32(bf) < createGame.Stake {
-			return errors.New("user not allowed to create game with indicated stake")
-		}
+		// bf, err := strconv.ParseFloat(balance, 32)
+		// if err != nil {
+		//	return err
+		// }
+		// if float32(bf) < createGame.Stake {
+		//	return errors.New("user not allowed to create game with indicated stake")
+		// }
 
 		blockIds := []uint64{}
 		for _, placement := range createGame.Placements {
