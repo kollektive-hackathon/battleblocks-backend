@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	gcppubsub "cloud.google.com/go/pubsub"
@@ -118,6 +119,14 @@ func (b *nftContractBridge) handleMinted(_ context.Context, m *gcppubsub.Message
 		}
 
 		tx.Table("nft_purchase_history").Create(&nft_history)
+
+		result := tx.Exec(fmt.Sprintf(`INSERT INTO user_block_inventory(user_id, block_id, active)
+			SELECT %d, %d, true`, user.Id, block.Id))
+
+		if result.Error != nil {
+			log.Warn().Msg("error inserting the item to user inventory")
+			return errors.New("error inserting the item to user inventory")
+		}
 
 		return nil
 	})

@@ -64,7 +64,7 @@ func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]Gam
 			Offset(page.Offset).
 			Clauses(clause.OrderBy{
 				Expression: clause.Expr{
-					SQL:                "(owner_id = $1 AND game_status = 'PLAYING') DESC, (owner_id = $1) DESC, (game_status = 'PLAYING') DESC, time_created DESC",
+					SQL:                "(owner_id = $1 AND game_status = 'PLAYING') DESC,(owner_id = $1) DESC, (challenger_id = $1) DESC, (game_status = 'PLAYING') DESC, time_created DESC",
 					Vars:               []interface{}{userId},
 					WithoutParentheses: true,
 				},
