@@ -51,6 +51,7 @@ func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]Gam
 
 		res := tx.Table("game").
 			Where("game.game_status IN ('CREATED', 'PLAYING')").
+			Where("game.owner_id = ? OR game.challenger_id = ?", userId, userId).
 			Count(&gamesSize)
 		if res.Error != nil {
 			return res.Error
@@ -60,6 +61,7 @@ func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]Gam
 			Joins("LEFT JOIN battleblocks_user AS challenger ON game.challenger_id = challenger.id").
 			Select("game.*, owner.username AS owner_name, challenger.username AS challenger_name").
 			Where("game.game_status IN ('CREATED', 'PLAYING')").
+			Where("game.owner_id = ? OR game.challenger_id = ?", userId, userId).
 			Limit(page.Size).
 			Offset(page.Offset).
 			Clauses(clause.OrderBy{
