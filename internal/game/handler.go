@@ -111,7 +111,11 @@ func (gh *gameHandler) playMove(c *gin.Context) {
 
 	userEmail := utils.GetUserEmail(c)
 
-	gh.gameService.playMove(gameId, userEmail, body)
+	er := gh.gameService.playMove(gameId, userEmail, body)
+	if er != nil {
+		c.JSON(er.Problem.Status, er.Problem)
+		return
+	}
 
 	c.Status(http.StatusNoContent)
 }
