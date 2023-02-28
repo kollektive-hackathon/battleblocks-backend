@@ -88,8 +88,8 @@ func (gs *gameService) joinGame(joinGame JoinGameRequest, gameId uint64, userEma
 			return f.Error
 		}
 
-		var game *model.Game
-		f = tx.Raw("SELECT * FROM game u WHERE id = ?", gameId).First(game)
+		var game model.Game
+		f = tx.Raw("SELECT * FROM game u WHERE id = ?", gameId).First(&game)
 		if f.Error != nil {
 			return f.Error
 		}
@@ -106,7 +106,7 @@ func (gs *gameService) joinGame(joinGame JoinGameRequest, gameId uint64, userEma
 
 		var blocks []model.Block
 
-		f = tx.Raw("SELECT * FROM block b WHERE b.id IN (?)", blockIds).Scan(blocks)
+		f = tx.Raw("SELECT * FROM block b WHERE b.id IN (?)", blockIds).Scan(&blocks)
 		if f.Error != nil {
 			log.Warn().Msg("error fetching blocks of placements")
 			return f.Error
@@ -151,7 +151,7 @@ func (gs *gameService) joinGame(joinGame JoinGameRequest, gameId uint64, userEma
 			})
 		}
 
-		f = tx.Table(model.BlockPlacement{}.TableName()).Create(blockPlacements)
+		f = tx.Table(model.BlockPlacement{}.TableName()).Create(&blockPlacements)
 		if f.Error != nil {
 			log.Warn().Msg("error persisting blocks placements")
 			return f.Error
