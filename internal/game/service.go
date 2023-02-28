@@ -364,7 +364,7 @@ func (gs *gameService) getGame(gameId uint64) (*GameResponse, *reject.ProblemWit
 		Table("game").
 		Joins("JOIN battleblocks_user AS owner ON game.owner_id = owner.id").
 		Joins("LEFT JOIN battleblocks_user AS challenger ON game.challenger_id = challenger.id").
-		Select("game.*, owner.username AS ownerName, challenger.username AS challengerName").
+		Select("game.*, owner.username AS owner_name, challenger.username AS challenger_name").
 		Where("game.id = ?", gameId).
 		First(&game)
 
