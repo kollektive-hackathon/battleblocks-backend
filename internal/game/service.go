@@ -466,9 +466,6 @@ func checkBalance(address string) (string, error) {
 	var adr [8]byte
 	copy(adr[:], address)
 
-	fmt.Printf("txCode: %s\n", txCode)
-	fmt.Printf("address: %s\n", address)
-
 	balance, err := c.ExecuteScriptAtLatestBlock(context.Background(), []byte(
 		txCode,
 	), []cadence.Value{
