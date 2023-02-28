@@ -31,6 +31,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *gorm.DB) {
 	routes := rg.Group("/game")
 	routes.GET("", middleware.VerifyAuthToken, handler.getGames)
 	routes.GET("/:id", middleware.VerifyAuthToken, handler.getGame)
+	routes.GET("/:id/placement", middleware.VerifyAuthToken, handler.getPlacements)
 	routes.POST("", middleware.VerifyAuthToken, handler.createGame)
 	routes.POST("/:id/join", middleware.VerifyAuthToken, handler.joinGame)
 
@@ -72,6 +73,22 @@ func (gh *gameHandler) getMoves(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, moves)
+}
+
+func (gh *gameHandler) getPlacements(c *gin.Context) {
+	gameId, parseErr := strconv.ParseUint(c.Param("id"), 0, 64)
+	if parseErr != nil {
+		c.JSON(http.StatusBadRequest, reject.RequestParamsProblem())
+		return
+	}
+
+	placements, err := gh.gameService.getPlacements(gameId, utils.GetUserEmail(c))
+	if err != nil {
+		c.JSON(err.Problem.Status, err.Problem)
+		return
+	}
+
+	c.JSON(http.StatusOK, placements)
 }
 
 type PlayMoveRequest struct {
