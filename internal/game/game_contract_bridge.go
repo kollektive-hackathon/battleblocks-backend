@@ -61,11 +61,12 @@ type gameContractBridge struct {
 	notificationHub *ws.WebSocketNotificationHub
 }
 
-func (b *gameContractBridge) sendJoinGame(stake float32, rootMerkel []uint8, gameId uint64, userAuthorizer blockchain.Authorizer) {
+func (b *gameContractBridge) sendJoinGame(stake float32, rootMerkel []byte, gameId uint64, userAuthorizer blockchain.Authorizer) {
 	commandType := "GAME_JOIN"
+	uint8Merkle := byteArrayToUint(rootMerkel)
 	payload := []any{
 		stake,
-		rootMerkel,
+		uint8Merkle,
 		gameId,
 	}
 	authorizers := []blockchain.Authorizer{userAuthorizer, blockchain.GetAdminAuthorizer()}
@@ -76,16 +77,7 @@ func (b *gameContractBridge) sendJoinGame(stake float32, rootMerkel []uint8, gam
 func (b *gameContractBridge) sendCreateGameTx(stake float32, rootMerkel []byte, gameId uint64, userAuthorizer blockchain.Authorizer) {
 	commandType := "GAME_CREATE"
 
-	// create buffer from byte array
-	buffer := bytes.NewReader(rootMerkel)
-
-	// read bytes from buffer as uint64
-	uint8Merkle := make([]uint64, len(rootMerkel))
-	for i := 0; i < len(uint8Merkle); i++ {
-		var num uint8
-		binary.Read(buffer, binary.BigEndian, &num)
-		uint8Merkle[i] = uint64(num)
-	}
+	uint8Merkle := byteArrayToUint(rootMerkel)
 
 	payload := []any{
 		stake,
@@ -254,4 +246,19 @@ func (b *gameContractBridge) handleGameOver(_ context.Context, message *gcppubsu
 		},
 	}
 	b.notificationHub.Publish(fmt.Sprintf("game/%d", messagePayload.GameId), wsEvent)
+}
+
+func byteArrayToUint(data []byte) []uint64 {
+	// create buffer from byte array
+	buffer := bytes.NewReader(data)
+
+	// read bytes from buffer as uint64
+	uint8Data := make([]uint64, len(data))
+	for i := 0; i < len(uint8Data); i++ {
+		var num uint8
+		binary.Read(buffer, binary.BigEndian, &num)
+		uint8Data[i] = uint64(num)
+	}
+
+	return uint8Data
 }
