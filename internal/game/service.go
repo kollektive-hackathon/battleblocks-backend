@@ -171,7 +171,8 @@ func (gs *gameService) joinGame(joinGame JoinGameRequest, gameId uint64, userEma
 	return nil
 }
 
-func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string) *reject.ProblemWithTrace {
+func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string) (*model.Game, *reject.ProblemWithTrace) {
+	var createdGame *model.Game
 	err := gs.db.Transaction(func(tx *gorm.DB) error {
 		var userId string
 		f := tx.Raw("SELECT u.id FROM battleblocks_user u WHERE email = ?", userEmail).First(&userId)
@@ -227,13 +228,13 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 		}
 
 		owner, _ := strconv.ParseUint(userId, 10, 64)
-		game := &model.Game{
+		createdGame = &model.Game{
 			OwnerId:     owner,
 			GameStatus:  model.GameCreated,
 			Stake:       uint64(createGame.Stake),
 			TimeCreated: time.Now().UTC().UnixMilli(),
 		}
-		f = tx.Table("game").Create(&game)
+		f = tx.Table("game").Create(&createGame)
 		if f.Error != nil {
 			log.Warn().Msg("error persisting game to database")
 			return f.Error
@@ -249,7 +250,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 			blockPlacements = append(blockPlacements, &model.BlockPlacement{
 				BlockId:     strconv.FormatUint(placement.BlockId, 10),
 				UserId:      owner,
-				GameId:      game.Id,
+				GameId:      createdGame.Id,
 				Coordinatex: placement.X,
 				Coordinatey: placement.Y,
 			})
@@ -262,7 +263,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 
 		var points []*model.GameGridPoint
 		for _, singlePoint := range mtreeData {
-			points = append(points, pointFromData(string(singlePoint), game.Id, owner))
+			points = append(points, pointFromData(string(singlePoint), createdGame.Id, owner))
 		}
 
 		f = tx.Table("game_grid_point").Create(&points)
@@ -271,19 +272,19 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 			return f.Error
 		}
 
-		gs.gameContractBridge.sendCreateGameTx(createGame.Stake, merkle.Root(), game.Id, userAuthorizer)
+		gs.gameContractBridge.sendCreateGameTx(createGame.Stake, merkle.Root(), createdGame.Id, userAuthorizer)
 
 		return nil
 	})
 
 	if err != nil {
-		return &reject.ProblemWithTrace{
+		return nil, &reject.ProblemWithTrace{
 			Problem: reject.UnexpectedProblem(err),
 			Cause:   err,
 		}
 	}
 
-	return nil
+	return createdGame, nil
 }
 
 func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHistory, *reject.ProblemWithTrace) {

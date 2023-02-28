@@ -133,11 +133,13 @@ func (gh *gameHandler) createGame(c *gin.Context) {
 	}
 
 	userEmail := utils.GetUserEmail(c)
-	err := gh.gameService.createGame(body, userEmail)
+	createdGame, err := gh.gameService.createGame(body, userEmail)
 
 	if err != nil {
 		c.JSON(err.Problem.Status, err.Problem)
 	}
+
+	c.JSON(http.StatusOK, createdGame)
 }
 
 func (gh *gameHandler) joinGame(c *gin.Context) {
