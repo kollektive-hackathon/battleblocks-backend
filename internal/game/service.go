@@ -469,7 +469,9 @@ func checkBalance(address string) (string, error) {
 
 	flowAddress := flow.HexToAddress(address)
 
-	args := []cadence.Value{cadence.Address(flowAddress)}
+	cadenceAddress := cadence.BytesToAddress(flowAddress.Bytes())
+
+	args := []cadence.Value{cadence.Address(cadenceAddress)}
 
 	balance, err := c.ExecuteScriptAtLatestBlock(context.Background(), []byte(
 		txCode,
