@@ -27,6 +27,9 @@ func (hub *WebSocketNotificationHub) UnregisterListener(topic string, conn *webs
 	hub.registrationMutex.Lock()
 	defer hub.registrationMutex.Unlock()
 
+	if conn == nil {
+		return
+	}
 	connAddrToClose := conn.RemoteAddr()
 
 	if len(hub.listeners[topic]) == 1 {

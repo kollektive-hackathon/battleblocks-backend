@@ -2,6 +2,8 @@ package ws
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/ws"
@@ -15,6 +17,9 @@ type wsHandler struct {
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
 func RegisterRoutes(rg *gin.RouterGroup) {
@@ -47,7 +52,11 @@ func (wsh *wsHandler) serveGameWs(c *gin.Context) {
 func (wsh *wsHandler) serveRegistrationWs(c *gin.Context) {
 	//userEmail := utils.GetUserEmail(c)
 	userEmail := c.Param("userEmail")
-	conn, _ := upgrader.Upgrade(c.Writer, c.Request, nil)
+	conn, er := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if er != nil {
+		log.Warn().Msg("Couldnt upgrade request")
+		return
+	}
 	defer wsh.notificationHub.UnregisterListener(fmt.Sprintf("registration/%s", userEmail), conn)
 
 	wsh.notificationHub.RegisterListener(fmt.Sprintf("registration/%s", userEmail), conn)
