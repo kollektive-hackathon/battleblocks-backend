@@ -16,6 +16,7 @@ import (
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
 	"github.com/onflow/cadence"
+	"github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go-sdk/access/grpc"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
@@ -439,9 +440,9 @@ func checkBalance(address string) (string, error) {
 		import FungibleToken from 0xFUNGIBLE_TOKEN_ADDRESS
 		import FlowToken from 0xFLOW_TOKEN_ADDRESS
 
-		pub fun main(): UFix64 {
+		pub fun main(account: Address): UFix64 {
 
-		let vaultRef = getAccount(0x6596df87e72d6503)
+		let vaultRef = getAccount(account)
 		.getCapability(/public/flowTokenBalance)
 		.borrow<&FlowToken.Vault{FungibleToken.Balance}>()
 		?? panic("Could not borrow Balance reference to the Vault")
@@ -469,9 +470,13 @@ func checkBalance(address string) (string, error) {
 	fmt.Printf("txCode: %s\n", txCode)
 	fmt.Printf("address: %s\n", address)
 
+	flowAddress := flow.HexToAddress(address)
+
+	args := []cadence.Value{cadence.Address(flowAddress)}
+
 	balance, err := c.ExecuteScriptAtLatestBlock(context.Background(), []byte(
 		txCode,
-	), []cadence.Value{})
+	), args)
 
 	if err != nil {
 		return "", err
