@@ -65,9 +65,9 @@ func (b *gameContractBridge) sendJoinGame(stake float32, rootMerkel []byte, game
 	commandType := "GAME_JOIN"
 	uint8Merkle := byteArrayToUint(rootMerkel)
 	payload := []any{
+		gameId,
 		stake,
 		uint8Merkle,
-		gameId,
 	}
 	authorizers := []blockchain.Authorizer{userAuthorizer, blockchain.GetAdminAuthorizer()}
 	cmd := blockchain.NewBlockchainCommand(commandType, payload, authorizers)
