@@ -230,7 +230,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 		owner, _ := strconv.ParseUint(userId, 10, 64)
 		createdGame = &model.Game{
 			OwnerId:     owner,
-			GameStatus:  model.GameCreated,
+			GameStatus:  model.GamePreparing,
 			Stake:       uint64(createGame.Stake),
 			TimeCreated: time.Now().UTC().UnixMilli(),
 		}
