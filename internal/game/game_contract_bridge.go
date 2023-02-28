@@ -195,10 +195,10 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 
 	result := b.db.
 		Model(&model.Game{}).
-		Where("id = ?", messagePayload.GameId).
+		Where("id = ?", messagePayload.Payload).
 		Updates(map[string]any{
-			"flow_id":     messagePayload.Payload,
-			"game_status": "CREATED",
+			"flow_id": messagePayload.GameId,
+			"status":  "CREATED",
 		})
 
 	if result.Error != nil {
