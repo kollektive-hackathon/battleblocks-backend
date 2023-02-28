@@ -189,10 +189,10 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 			return errors.New("error fetching address of current user")
 		}
 
-		balance, err := checkBalance(*wallet.Address)
-		if err != nil {
-			return err
-		}
+		// balance, err := checkBalance(*wallet.Address)
+		// if err != nil {
+		//	return err
+		// }
 
 		bf, err := strconv.ParseFloat(balance, 32)
 		if err != nil {
@@ -465,11 +465,6 @@ func checkBalance(address string) (string, error) {
 	}
 	var adr [8]byte
 	copy(adr[:], address)
-
-	log.Debug().
-		Msgf("script code %v, addrs %s, adr raw %v, adr cdc %v", txCode, address, adr, []cadence.Value{
-			cadence.NewAddress(adr),
-		})
 
 	balance, err := c.ExecuteScriptAtLatestBlock(context.Background(), []byte(
 		txCode,
