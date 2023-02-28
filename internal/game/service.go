@@ -155,7 +155,7 @@ func (gs *gameService) joinGame(joinGame JoinGameRequest, gameId uint64, userEma
 			return f.Error
 		}
 
-		gs.gameContractBridge.sendJoinGame(float32(game.Stake), string(merkle.Root()), gameId, userAuthorizer)
+		gs.gameContractBridge.sendJoinGame(float32(game.Stake), merkle.Root(), gameId, userAuthorizer)
 		return nil
 
 	})
@@ -188,12 +188,12 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 			return errors.New("error fetching address of current user")
 		}
 
-		//balance, err := checkBalance(*wallet.Address)
-		/*if err != nil {
+		balance, err := checkBalance(*wallet.Address)
+		if err != nil {
 			return err
-		}*/
+		}
 
-		bf, err := strconv.ParseFloat("1.0", 32)
+		bf, err := strconv.ParseFloat(balance, 32)
 		if err != nil {
 			return err
 		}

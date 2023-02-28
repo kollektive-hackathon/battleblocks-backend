@@ -58,7 +58,7 @@ type gameContractBridge struct {
 	notificationHub *ws.WebSocketNotificationHub
 }
 
-func (b *gameContractBridge) sendJoinGame(stake float32, rootMerkel string, gameId uint64, userAuthorizer blockchain.Authorizer) {
+func (b *gameContractBridge) sendJoinGame(stake float32, rootMerkel []byte, gameId uint64, userAuthorizer blockchain.Authorizer) {
 	commandType := "GAME_JOIN"
 	payload := []any{
 		stake,
