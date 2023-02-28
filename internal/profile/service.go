@@ -115,7 +115,7 @@ func (s *ProfileService) activateBlocks(userEmail string, body ActivateBlocksReq
 			`UPDATE user_block_inventory 
                     SET active = true 
                   WHERE block_id IN ? 
-                    AND block_id = false
+                    AND active = false
                     AND user_id = (SELECT id FROM battleblocks_user WHERE email = ?)`, body.ActiveBlockIds, userEmail)
 
 		if result.Error != nil {
@@ -126,7 +126,7 @@ func (s *ProfileService) activateBlocks(userEmail string, body ActivateBlocksReq
 			`UPDATE user_block_inventory 
                     SET active = false 
                   WHERE block_id NOT IN ? 
-                    AND block_id = true
+                    AND active = true
                     AND user_id = (SELECT id FROM battleblocks_user WHERE email = ?)`, body.ActiveBlockIds, userEmail)
 
 		if result.Error != nil {
