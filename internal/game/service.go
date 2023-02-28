@@ -439,9 +439,9 @@ func checkBalance(address string) (string, error) {
 		import FungibleToken from 0xFUNGIBLE_TOKEN_ADDRESS
 		import FlowToken from 0xFLOW_TOKEN_ADDRESS
 
-		pub fun main(account: Address): UFix64 {
+		pub fun main(): UFix64 {
 
-		let vaultRef = getAccount(account)
+		let vaultRef = getAccount(0x6596df87e72d6503)
 		.getCapability(/public/flowTokenBalance)
 		.borrow<&FlowToken.Vault{FungibleToken.Balance}>()
 		?? panic("Could not borrow Balance reference to the Vault")
@@ -471,9 +471,7 @@ func checkBalance(address string) (string, error) {
 
 	balance, err := c.ExecuteScriptAtLatestBlock(context.Background(), []byte(
 		txCode,
-	), []cadence.Value{
-		cadence.Address(adr),
-	})
+	), []cadence.Value{})
 
 	if err != nil {
 		return "", err
