@@ -255,7 +255,6 @@ func (b *gameContractBridge) handleChallengerJoined(_ context.Context, m *gcppub
 			return nil
 
 		})
-		m.Ack()
 
 		game, err := b.findGameByFlowID(messagePayload.GameId)
 		if err != nil {
@@ -272,6 +271,7 @@ func (b *gameContractBridge) handleChallengerJoined(_ context.Context, m *gcppub
 
 		b.notificationHub.Publish(fmt.Sprintf("game/%d", game.Id), wsEvent)
 	}
+	m.Ack()
 
 }
 
