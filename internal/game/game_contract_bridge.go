@@ -186,7 +186,7 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 
 	result := b.db.
 		Model(&model.Game{}).
-		Where("id = ?", messagePayload.Payload).
+		Where("id = ?", messagePayload.GameId).
 		Updates(map[string]any{
 			"flow_id": messagePayload.Payload,
 		})
@@ -267,7 +267,7 @@ func (b *gameContractBridge) handleChallengerJoined(_ context.Context, m *gcppub
 		wsEvent := map[string]any{
 			"type": "CHALLENGER_JOINED",
 			"payload": map[string]any{
-				"turn": messagePayload.Turn,
+				"turn":        messagePayload.Turn,
 				"game_status": "PLAYING",
 			},
 		}
