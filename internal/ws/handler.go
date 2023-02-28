@@ -34,7 +34,11 @@ func RegisterRoutes(rg *gin.RouterGroup) {
 
 func (wsh *wsHandler) serveGameWs(c *gin.Context) {
 	gameId := c.Param("gameId")
-	conn, _ := upgrader.Upgrade(c.Writer, c.Request, nil)
+	conn, er := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if er != nil {
+		log.Warn().Err(er).Msg("Couldnt upgrade request")
+		return
+	}
 	defer wsh.notificationHub.UnregisterListener(fmt.Sprintf("game/%s", gameId), conn)
 
 	wsh.notificationHub.RegisterListener(fmt.Sprintf("game/%s", gameId), conn)
@@ -54,7 +58,7 @@ func (wsh *wsHandler) serveRegistrationWs(c *gin.Context) {
 	userEmail := c.Param("userEmail")
 	conn, er := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if er != nil {
-		log.Warn().Msg("Couldnt upgrade request")
+		log.Warn().Err(er).Msg("Couldnt upgrade request")
 		return
 	}
 	defer wsh.notificationHub.UnregisterListener(fmt.Sprintf("registration/%s", userEmail), conn)
