@@ -74,6 +74,8 @@ func (b *nftContractBridge) handleWithdrew(_ context.Context, _ *gcppubsub.Messa
 }
 
 func (b *nftContractBridge) handleMinted(_ context.Context, m *gcppubsub.Message) {
+	log.Info().Msg("Received message payload " + string(m.Data))
+
 	var eventData MintedEvent
 	err := json.Unmarshal(m.Data, &eventData)
 
