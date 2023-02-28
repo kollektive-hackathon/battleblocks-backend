@@ -100,12 +100,17 @@ func (b *gameContractBridge) sendMove(
 	nonce *uint64,
 	userAuthorizer blockchain.Authorizer,
 ) {
+	var uint64Proof [][]uint64
+	if proof != nil {
+		uint64Proof = twoDimensionalbyteArrayToTwoDimensionalUint64Array(*proof)
+	}
+
 	commandType := "GAME_MOVE"
 	payload := []any{
 		gameId,
 		guessX,
 		guessY,
-		proof,
+		uint64Proof,
 		blockPresent,
 		opponentGuessX,
 		opponentGuessY,
@@ -350,4 +355,18 @@ func byteArrayToUint(data []byte) []uint64 {
 	}
 
 	return uint8Data
+}
+
+func twoDimensionalbyteArrayToTwoDimensionalUint64Array(data [][]byte) [][]uint64 {
+	uint64Data := make([][]uint64, len(data))
+	for i, row := range data {
+		uint64Data[i] = make([]uint64, len(row))
+		buffer := bytes.NewReader(row)
+		for j := 0; j < len(row); j++ {
+			var num uint8
+			binary.Read(buffer, binary.BigEndian, &num)
+			uint64Data[i][j] = uint64(num)
+		}
+	}
+	return uint64Data
 }
