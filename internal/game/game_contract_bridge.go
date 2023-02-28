@@ -27,24 +27,24 @@ type Moved struct {
 }
 
 type ChallengerJoined struct {
-	GameId            uint64           `json:"gameId"`
-	StartTime         uint64           `json:"startTime"`
-	Wager             float64          `json:"wager"`
-	PlayerA           string           `json:"playerA"`
-	PlayerB           string           `json:"playerB"`
-	Winner            string           `json:"winner"`
-	PlayerHitCount    map[string]uint8 `json:"playerHitCount"`
-	GameState         uint8            `json:"gameState"`
-	Turn              uint8            `json:"turn"`
-	PlayerAMerkleRoot []uint8          `json:"playerAMerkleRoot"`
-	PlayerBMerkleRoot []uint8          `json:"playerBMerkleRoot"`
+	GameId    uint64 `json:"gameId"`
+	StartTime uint64 `json:"startTime"`
+	// Wager             float64          `json:"wager"`
+	PlayerA *string `json:"playerA"`
+	PlayerB *string `json:"playerB"`
+	// Winner            *string           `json:"winner"`
+	// PlayerHitCount    map[string]uint8 `json:"playerHitCount"`
+	// GameState         uint8            `json:"gameState"`
+	Turn uint8 `json:"turn"`
+	// PlayerAMerkleRoot []uint8          `json:"playerAMerkleRoot"`
+	// PlayerBMerkleRoot []uint8          `json:"playerBMerkleRoot"`
 }
 
 type GameOver struct {
 	GameId         uint64          `json:"gameID"`
-	PlayerA        uint64          `json:"playerA"`
-	PlayerB        uint64          `json:"playerB"`
-	Winner         uint64          `json:"winner"`
+	PlayerA        string          `json:"playerA"`
+	PlayerB        string          `json:"playerB"`
+	Winner         string          `json:"winner"`
 	PlayerHitCount map[string]uint `json:"playerHitCount"`
 }
 
@@ -182,16 +182,24 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 		return
 	}
 
-	timeNow := time.Now().UTC()
-	game := model.Game{
-		FlowId:      &messagePayload.Payload,
-		OwnerId:     messagePayload.CreatorId,
-		GameStatus:  "CREATED",
-		Stake:       messagePayload.Stake,
-		TimeCreated: timeNow.UnixMilli(),
-	}
+	result := b.db.
+		Model(&model.Game{}).
+		Where("id = ?", messagePayload.Payload).
+		Updates(map[string]any{
+			"flow_id": messagePayload.Payload,
+		})
 
-	result := b.db.Create(&game)
+	//TODO : ---
+	// timeNow := time.Now().UTC()
+	// game := model.Game{
+	// FlowId:      &messagePayload.Payload,
+	// OwnerId:     messagePayload.CreatorId,
+	// GameStatus:  "CREATED",
+	// Stake:       messagePayload.Stake,
+	// TimeCreated: timeNow.UnixMilli(),
+	// }
+	// UPDATE flow ID
+	// -----------
 
 	if result.Error != nil {
 		log.Warn().Err(result.Error).Msg("Error while handling GameOver")
@@ -211,11 +219,47 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 	b.notificationHub.Publish(fmt.Sprintf("game/%d", messagePayload.GameId), wsEvent)
 }
 
-func (b *gameContractBridge) handleChallengerJoined(_ context.Context, _ *gcppubsub.Message) {
-	// TODO when joined command done
+func (b *gameContractBridge) handleChallengerJoined(_ context.Context, m *gcppubsub.Message) {
+	log.Info().Msg("Received message payload " + string(m.Data))
+	messagePayload, err := utils.JsonDecodeByteStream[ChallengerJoined](m.Data)
+	if err != nil {
+		log.Warn().Err(err).Msg("Error while parsing GameOver message")
+		return
+	}
+	if messagePayload.PlayerB != nil {
+		b.db.Transaction(func(tx *gorm.DB) error {
+			var user model.User
+			f := tx.Raw(`SELECT bu.* FROM battleblocks_user bu
+				LEFT JOIN custodial_wallet cw ON bu.custodial_wallet_id = cw.id
+				WHERE cw.address = ?`, messagePayload.PlayerB).First(&user)
+
+			if f.Error != nil {
+				log.Warn().Err(err).Msg("Error while handling ChallengerJoined message")
+				return f.Error
+			}
+
+			f = tx.
+				Model(&model.Game{}).
+				Where("flow_id = ?", messagePayload.GameId).
+				Updates(map[string]any{
+					"challenger_id": user.Id,
+					"turn":          messagePayload.Turn,
+				})
+
+			if f.Error != nil {
+				log.Warn().Err(err).Msg("Error while handling ChallengerJoined message")
+				return f.Error
+			}
+
+			return nil
+
+		})
+
+	}
 }
 
 func (b *gameContractBridge) handleGameOver(_ context.Context, message *gcppubsub.Message) {
+
 	log.Info().Msg("Received message payload " + string(message.Data))
 	messagePayload, err := utils.JsonDecodeByteStream[GameOver](message.Data)
 	if err != nil {
@@ -225,7 +269,7 @@ func (b *gameContractBridge) handleGameOver(_ context.Context, message *gcppubsu
 
 	result := b.db.
 		Model(&model.Game{}).
-		Where("id = ?", messagePayload.GameId).
+		Where("flow_id = ?", messagePayload.GameId).
 		Updates(map[string]any{
 			"winner":      messagePayload.Winner,
 			"game_status": "FINISHED",
@@ -236,16 +280,26 @@ func (b *gameContractBridge) handleGameOver(_ context.Context, message *gcppubsu
 		return
 	}
 
+	var game model.Game
+	f := b.db.Model(&model.Game{}).
+		Where("flow_id = ?", messagePayload.GameId).
+		First(&game)
+
 	message.Ack()
+
+	if f.Error != nil {
+		log.Warn().Err(result.Error).Msg("Error while sending websocket for gameover")
+		return
+	}
 
 	wsEvent := map[string]any{
 		"type": "GAME_OVER",
 		"payload": map[string]any{
-			"gameId":   messagePayload.GameId,
+			"gameId":   game.Id,
 			"winnerId": messagePayload.Winner,
 		},
 	}
-	b.notificationHub.Publish(fmt.Sprintf("game/%d", messagePayload.GameId), wsEvent)
+	b.notificationHub.Publish(fmt.Sprintf("game/%d", game.Id), wsEvent)
 }
 
 func byteArrayToUint(data []byte) []uint64 {

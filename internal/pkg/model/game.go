@@ -10,6 +10,7 @@ type Game struct {
 	TimeStarted  int64      `json:"timeStarted"`
 	TimeCreated  int64      `json:"timeCreated"`
 	WinnerId     *uint64    `json:"winnerId"`
+	Turn         *uint64    `json:"turn"`
 }
 
 func (Game) TableName() string {

@@ -53,6 +53,7 @@ CREATE TABLE game
     stake              BIGINT      NOT NULL,
     time_started       BIGINT,
     time_created       BIGINT,
+    turn               BIGINT,
     winner_id          BIGINT
 );
 
