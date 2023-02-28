@@ -121,6 +121,19 @@ func (gs *gameService) joinGame(joinGame JoinGameRequest, gameId uint64, userEma
 			return errors.New("wallet does not exist")
 		}
 
+		balance, err := checkBalance(*wallet.Address)
+		if err != nil {
+			return err
+		}
+
+		bf, err := strconv.ParseFloat(balance, 32)
+		if err != nil {
+			return err
+		}
+		if float32(bf) < (float32(game.Stake) + 1) {
+			return errors.New("user not allowed to create game with indicated stake")
+		}
+
 		blockIds := []uint64{}
 		for _, placement := range joinGame.Placements {
 			blockIds = append(blockIds, placement.BlockId)
@@ -309,7 +322,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 	return createdGame, nil
 }
 
-//TODO add enemy moves also
+// TODO add enemy moves also
 func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHistory, *reject.ProblemWithTrace) {
 	var moves []model.MoveHistory
 	result := gs.db.
