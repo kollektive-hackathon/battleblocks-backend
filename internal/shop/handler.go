@@ -51,7 +51,7 @@ func (h shopHandler) paypalWebhook(c *gin.Context) {
 	rawBody, _ := ioutil.ReadAll(c.Request.Body)
 	var body map[string]any
 	json.Unmarshal(rawBody, &body)
-	log.Info().Interface("pp_data", rawBody).Msg("Pp data--")
+	log.Info().Interface("pp_data", body).Msg("Pp data--")
 
 	// description -- user id
 	// custom_id -- item id
