@@ -192,7 +192,7 @@ func (gs *gameService) joinGame(joinGame JoinGameRequest, gameId uint64, userEma
 			return f.Error
 		}
 
-		gs.gameContractBridge.sendJoinGame(float32(game.Stake), merkle.Root(), gameId, userAuthorizer)
+		gs.gameContractBridge.sendJoinGame(float32(game.Stake), merkle.Root(), *game.FlowId, userAuthorizer)
 		return nil
 
 	})
