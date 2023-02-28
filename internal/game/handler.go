@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/middleware"
-	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/reject"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/utils"
 	"gorm.io/gorm"
@@ -128,7 +127,7 @@ func (gh *gameHandler) getGames(c *gin.Context) {
 		return
 	}
 
-	response := utils.NewPageResponse[model.Game]().
+	response := utils.NewPageResponse[GameResponse]().
 		WithItems(games).
 		WithItemCount(*gamesCount)
 

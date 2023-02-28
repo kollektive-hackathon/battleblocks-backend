@@ -32,8 +32,14 @@ type gameService struct {
 	gameContractBridge *gameContractBridge
 }
 
-func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]model.Game, *int64, *reject.ProblemWithTrace) {
-	games := []model.Game{}
+type GameResponse struct {
+	model.Game
+	owner_name      *string
+	challenger_name *string
+}
+
+func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]GameResponse, *int64, *reject.ProblemWithTrace) {
+	games := []GameResponse{}
 	gamesSize := int64(0)
 
 	err := gs.db.Transaction(func(tx *gorm.DB) error {
@@ -49,17 +55,32 @@ func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]mod
 			return res.Error
 		}
 
-		res = tx.Table("game").
+		tx.Table("game").Joins("JOIN battleblocks_user AS owner ON game.owner_id = owner.id").
+			Joins("LEFT JOIN battleblocks_user AS challenger ON game.challenger_id = challenger.id").
+			Select("game.*, owner.name AS owner_name, challenger.name AS challenger_name").
+			Where("game.game_status IN ('CREATED', 'PLAYING')").
 			Limit(page.Size).
 			Offset(page.Offset).
 			Clauses(clause.OrderBy{
 				Expression: clause.Expr{
-					SQL:                "(owner_id = $1 AND game_status = 'PLAYING') DESC, (owner_id = $1) DESC, time_created DESC",
+					SQL:                "(owner_id = $1 AND game_status = 'PLAYING') DESC, (owner_id = $1) DESC, (game_status = 'PLAYING') DESC, time_created DESC",
 					Vars:               []interface{}{userId},
 					WithoutParentheses: true,
 				},
 			}).
 			Scan(&games)
+
+		// res = tx.Table("game").
+		// Limit(page.Size).
+		// Offset(page.Offset).
+		// Clauses(clause.OrderBy{
+		// Expression: clause.Expr{
+		// SQL:                "(owner_id = $1 AND game_status = 'PLAYING') DESC, (owner_id = $1) DESC, time_created DESC",
+		// Vars:               []interface{}{userId},
+		// WithoutParentheses: true,
+		// },
+		// }).
+		// Scan(&games)
 		if res.Error != nil {
 			return res.Error
 		}
@@ -200,7 +221,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 		if err != nil {
 			return err
 		}
-		if float32(bf) < (createGame.Stake + 1){
+		if float32(bf) < (createGame.Stake + 1) {
 			return errors.New("user not allowed to create game with indicated stake")
 		}
 
@@ -287,7 +308,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 	return createdGame, nil
 }
 
-//TODO add enemy moves also 
+//TODO add enemy moves also
 func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHistory, *reject.ProblemWithTrace) {
 	var moves []model.MoveHistory
 	result := gs.db.
@@ -305,8 +326,7 @@ func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHi
 	return moves, nil
 }
 
-
-func (gs *gameService) getGame(gameId uint64) (*model.Game , *reject.ProblemWithTrace) {
+func (gs *gameService) getGame(gameId uint64) (*model.Game, *reject.ProblemWithTrace) {
 	var game *model.Game
 	result := gs.db.
 		Model(&model.Game{}).
