@@ -433,6 +433,18 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		}
 	}
 
+	var game model.Game
+	result = gs.db.
+		Model(&model.Game{}).
+		Where("id = ?", gameId).
+		Find(&game)
+	if result.Error != nil {
+		return &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(result.Error),
+			Cause:   result.Error,
+		}
+	}
+
 	opponentProofData, proofDataLoadErr := gs.getLastOpponentMoveProofData(gameId, userEmail)
 
 	if errors.Is(proofDataLoadErr, gorm.ErrRecordNotFound) {
@@ -448,7 +460,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		userAuthorizer := blockchain.Authorizer{KmsResourceId: cw.ResourceId, ResourceOwnerAddress: *cw.Address}
 
 		if opponentProofData == nil {
-			gs.gameContractBridge.sendMove(gameId, request.X, request.Y, nil,
+			gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, nil,
 				nil, nil, nil, nil, userAuthorizer)
 		}
 		return nil
@@ -488,7 +500,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 	userAuthorizer := blockchain.Authorizer{KmsResourceId: cw.ResourceId, ResourceOwnerAddress: *cw.Address}
 
 	nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 0, 64)
-	gs.gameContractBridge.sendMove(gameId, request.X, request.Y, &proof.Hashes,
+	gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, &proof.Hashes,
 		&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber, userAuthorizer)
 
 	return nil
