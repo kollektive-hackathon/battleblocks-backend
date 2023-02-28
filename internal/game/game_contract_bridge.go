@@ -216,7 +216,7 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 			"stake":     messagePayload.Stake,
 		},
 	}
-	b.notificationHub.Publish(fmt.Sprintf("game/%d", messagePayload.GameId), wsEvent)
+	b.notificationHub.Publish(fmt.Sprintf("game/%d", messagePayload.Payload), wsEvent)
 }
 
 func (b *gameContractBridge) handleChallengerJoined(_ context.Context, m *gcppubsub.Message) {
