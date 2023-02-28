@@ -234,7 +234,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 			Stake:       uint64(createGame.Stake),
 			TimeCreated: time.Now().UTC().UnixMilli(),
 		}
-		f = tx.Table("game").Create(&createGame)
+		f = tx.Table("game").Create(&createdGame)
 		if f.Error != nil {
 			log.Warn().Msg("error persisting game to database")
 			return f.Error
