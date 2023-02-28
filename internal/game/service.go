@@ -392,7 +392,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 	result := gs.db.
 		Model(&model.BlockPlacement{}).
 		Where("game_id = ? AND user_id = (SELECT bu.id FROM battleblocks_user bu WHERE email = ?)", gameId, userEmail).
-		Select("block_id, coordinate_x AS x, coordinate_y AS y").
+		Select("block_id, coordinatex AS x, coordinatey AS y").
 		Find(&currentUserBlockPlacements)
 
 	if result.Error != nil {
