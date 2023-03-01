@@ -38,13 +38,13 @@ type GameResponse struct {
 }
 
 type MoveHistoryWithHit struct {
-	ID          uint64    `gorm:"column:id" json:"id"`
-	UserID      uint64    `gorm:"column:user_id" json:"userId"`
-	GameID      uint64    `gorm:"column:game_id" json:"gameId"`
-	Coordinatex int       `gorm:"column:coordinate_x" json:"x"`
-	Coordinatey int       `gorm:"column:coordinate_y" json:"y"`
-	PlayedAt    time.Time `gorm:"column:played_at" json:"playedAt"`
-	IsHit       bool      `gorm:"-" json:"isHit"`
+	ID          uint64 `gorm:"column:id" json:"id"`
+	UserID      uint64 `gorm:"column:user_id" json:"userId"`
+	GameID      uint64 `gorm:"column:game_id" json:"gameId"`
+	Coordinatex int    `gorm:"column:coordinate_x" json:"x"`
+	Coordinatey int    `gorm:"column:coordinate_y" json:"y"`
+	PlayedAt    uint64 `gorm:"column:played_at" json:"playedAt"`
+	IsHit       bool   `gorm:"-" json:"isHit"`
 }
 
 func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]GameResponse, *int64, *reject.ProblemWithTrace) {
