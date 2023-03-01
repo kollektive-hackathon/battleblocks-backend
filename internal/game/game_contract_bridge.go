@@ -200,6 +200,7 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 				"gameId": messagePayload.GameId,
 				"userId": user.Id,
 				"turn":   messagePayload.Turn,
+				"isHit":  isHit,
 				"x":      messagePayload.X,
 				"y":      messagePayload.Y,
 			},
