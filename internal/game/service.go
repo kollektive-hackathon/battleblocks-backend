@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+	merkletree "github.com/wealdtech/go-merkletree"
 
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/blockchain"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
@@ -443,8 +444,6 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 
 	mtree, _, err := blockchain.CreateMerkleTreeFromData(currentUserData)
 
-	log.Error().Interface("mtree",byteArrayToUint(mtree.Root())).Msg("PLAYING MOVE MERKLE TREE")
-
 	if err != nil {
 		return &reject.ProblemWithTrace{
 			Problem: reject.UnexpectedProblem(result.Error),
@@ -495,6 +494,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		userAuthorizer := blockchain.Authorizer{KmsResourceId: cw.ResourceId, ResourceOwnerAddress: *cw.Address}
 
 		fProof := [][]uint8{{}}
+
 		gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, fProof,
 			nil, nil, nil, nil, userAuthorizer)
 		return nil
@@ -545,6 +545,11 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 	userAuthorizer := blockchain.Authorizer{KmsResourceId: cw.ResourceId, ResourceOwnerAddress: *cw.Address}
 
 	nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 10, 64)
+
+	verify, err := merkletree.VerifyProof([]byte(CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), true, string(nonceNumber))), proof, mtree.Root())
+
+	fmt.Errorf("verifying root %v", verify)
+
 	gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, proof.Hashes,
 		&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber, userAuthorizer)
 
@@ -678,4 +683,3 @@ func pointFromData(singlePoint string, gameId uint64, userId uint64) *model.Game
 		Nonce:        nonce,
 	}
 }
-
