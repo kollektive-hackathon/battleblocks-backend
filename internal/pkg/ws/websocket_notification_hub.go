@@ -1,8 +1,10 @@
 package ws
 
 import (
-	"github.com/gorilla/websocket"
 	"sync"
+
+	"github.com/gorilla/websocket"
+	"github.com/rs/zerolog/log"
 )
 
 var singletonMutex sync.Mutex
@@ -50,10 +52,14 @@ func (hub *WebSocketNotificationHub) UnregisterListener(topic string, conn *webs
 }
 
 func (hub *WebSocketNotificationHub) Publish(targetTopic string, event any) {
+	log.Info().Interface("targetTopic", targetTopic).Msg("[WEBSOCKET] Publishing to websocet topic")
 	for topic := range hub.listeners {
 		if topic == targetTopic {
 			for _, listener := range hub.listeners[topic] {
-				_ = listener.WriteJSON(event)
+				err := listener.WriteJSON(event)
+				if err != nil {
+					log.Warn().Msg("[WEBSOCKET] Error writing json to connection")
+				}
 			}
 			break
 		}
