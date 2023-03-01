@@ -365,7 +365,6 @@ func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHi
 		Where("game_id = ?", gameId).
 		Order("played_at DESC")
 
-
 	if result.Error != nil {
 		return nil, &reject.ProblemWithTrace{
 			Problem: reject.UnexpectedProblem(result.Error),
@@ -473,9 +472,8 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		opponent = game.OwnerId
 	}
 
-	opponentProofData, proofDataLoadErr := gs.getLastOpponentMoveProofData(gameId, opponent, user.Id)
-
-	if errors.Is(proofDataLoadErr, gorm.ErrRecordNotFound) {
+	isFirstMove := gs.isFirstMove(gameId)
+	if isFirstMove {
 		cw := gs.getCustodialWallet(userEmail)
 		if cw == nil {
 			walletNotExistsErr := fmt.Errorf("custodial wallet not found while making move, user email %s", userEmail)
@@ -487,12 +485,19 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 
 		userAuthorizer := blockchain.Authorizer{KmsResourceId: cw.ResourceId, ResourceOwnerAddress: *cw.Address}
 
-		if opponentProofData == nil {
-			fProof := [][]uint8{{}}
-			gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, fProof,
-				nil, nil, nil, nil, userAuthorizer)
-		}
+		fProof := [][]uint8{{}}
+		gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, fProof,
+			nil, nil, nil, nil, userAuthorizer)
 		return nil
+
+	}
+	opponentProofData, proofDataLoadErr := gs.getLastOpponentMoveProofData(gameId, opponent, user.Id)
+
+	if proofDataLoadErr != nil {
+		return &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(proofDataLoadErr),
+			Cause:   proofDataLoadErr,
+		}
 	}
 
 	if proofDataLoadErr != nil {
@@ -533,6 +538,15 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber, userAuthorizer)
 
 	return nil
+}
+
+func (gs *gameService) isFirstMove(gameId uint64) bool {
+	var moves []model.MoveHistory
+	gs.db.Raw("SELECT * FROM move_history mh WHERE mh.game_id = ?", gameId).Scan(&moves)
+	if len(moves) > 0 {
+		return false
+	}
+	return true
 }
 
 func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, opponentId uint64, currUserId uint64) (*model.GameGridPoint, error) {
