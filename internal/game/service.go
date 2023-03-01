@@ -361,10 +361,10 @@ func (gs *gameService) getPlacements(gameId uint64, userEmail string) ([]Placeme
 
 func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHistory, *reject.ProblemWithTrace) {
 	var moves []model.MoveHistory
-	result := gs.db.
-		Model(&model.MoveHistory{}).
-		Where("game_id = ? ORDER BY played_at", gameId, userEmail).
-		Find(&moves)
+	result := gs.db.Table("move_history").
+		Where("game_id = ?", gameId).
+		Order("played_at DESC")
+
 
 	if result.Error != nil {
 		return nil, &reject.ProblemWithTrace{
