@@ -580,19 +580,35 @@ func (gs *gameService) isFirstMove(gameId uint64) bool {
 }
 
 func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, opponentId uint64, currUserId uint64) (*model.GameGridPoint, error) {
+	var mh model.MoveHistory
+
+	result := gs.db.Raw(`select move_history.* from
+		move_history WHERE move_history.game_id = ? AND move_history.user_id = ? ORDER BY played_at DESC LIMIT 1`, gameId, opponentId)
+	if result.Error != nil {
+		return nil , result.Error
+	}
+
 	var proofData model.GameGridPoint
-	result := gs.db.Raw(`
-	select game_grid_point.* from game_grid_point
-    LEFT JOIN move_history mh ON game_grid_point.game_id = mh.game_id
-                                     AND mh.coordinatey = game_grid_point.coordinate_y
-                                     AND mh.coordinatex = game_grid_point.coordinate_x
-                                    AND mh.user_id = $2
-    WHERE game_grid_point.user_id = $1 AND game_grid_point.game_id = $3 order by mh.played_at ASC LIMIT 1
-    `, currUserId, opponentId, gameId).First(&proofData)
+	result = gs.db.Raw(`
+		SELECT ggp.* FROM game_grid_point ggp where ggp.coordinate_x = ? AND coordinate_y = ? AND ggp.game_id = ? AND ggp.user_id = ?
+		`, mh.Coordinatex, mh.Coordinatey, gameId, currUserId).First(&proofData)
 
 	if result.Error != nil {
-		return nil, result.Error
+		return nil , result.Error
 	}
+
+	// result := gs.db.Raw(`
+	// select game_grid_point.* from game_grid_point
+	// LEFT JOIN move_history mh ON game_grid_point.game_id = mh.game_id
+	// AND mh.coordinatey = game_grid_point.coordinate_y
+	// AND mh.coordinatex = game_grid_point.coordinate_x
+	// AND mh.user_id = $2
+	// WHERE game_grid_point.user_id = $1 AND game_grid_point.game_id = $3 order by mh.played_at ASC LIMIT 1
+	// `, currUserId, opponentId, gameId).First(&proofData)
+
+	// if result.Error != nil {
+	// return nil, result.Error
+	// }
 
 	return &proofData, nil
 }
