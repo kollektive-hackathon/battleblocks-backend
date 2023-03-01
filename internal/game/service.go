@@ -61,9 +61,9 @@ func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]Gam
 			JOIN battleblocks_user AS owner ON game.owner_id = owner.id
 			LEFT JOIN battleblocks_user AS challenger ON game.challenger_id = challenger.id
 			WHERE game.game_status IN ('CREATED', 'PLAYING') AND
-			(game.owner_id = ? OR game.challenger_id = ? OR game.challenger_id IS NULL)
+			(game.owner_id = $1 OR game.challenger_id = $1 OR game.challenger_id IS NULL)
 			ORDER BY
-			(owner_id = ? AND game_status = 'PLAYING') DESC,(owner_id = ?) DESC, (challenger_id = ?) DESC, (game_status = 'PLAYING') DESC, time_created DESC
+			(owner_id = $1 AND game_status = 'PLAYING') DESC,(owner_id = $1) DESC, (challenger_id = $1) DESC, (game_status = 'PLAYING') DESC, time_created DESC
 			LIMIT $2
 			OFFSET $3`, userId, page.Size, page.Offset).Scan(&games)
 
