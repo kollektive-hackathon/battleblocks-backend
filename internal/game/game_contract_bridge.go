@@ -135,8 +135,19 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 		return
 	}
 
+	var user model.User
+	f := b.db.Raw(`SELECT bu.* FROM battleblocks_user bu
+		LEFT JOIN custodial_wallet cw ON bu.custodial_wallet_id = cw.id
+		WHERE cw.address = ?`, messagePayload.PlayerAddress).First(&user)
+
+	if f.Error != nil {
+		log.Warn().Err(err).Msg("Error while handling moved message")
+		return
+	}
+	
+
 	mh := model.MoveHistory{
-		UserId:      messagePayload.PlayerId,
+		UserId:      user.Id,
 		GameId:      game.Id,
 		Coordinatex: messagePayload.X,
 		Coordinatey: messagePayload.Y,
