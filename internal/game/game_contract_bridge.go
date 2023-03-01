@@ -198,10 +198,9 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 			"type": "MOVE_DONE",
 			"payload": map[string]any{
 				"gameId": messagePayload.GameId,
-				"userId": messagePayload.PlayerId,
+				"userId": user.Id,
 				"x":      messagePayload.X,
 				"y":      messagePayload.Y,
-				"isHit":  isHit,
 			},
 		}
 		b.notificationHub.Publish(fmt.Sprintf("game/%d", game.Id), wsEvent)
