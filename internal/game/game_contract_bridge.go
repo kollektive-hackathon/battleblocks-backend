@@ -252,24 +252,25 @@ func (b *gameContractBridge) handleChallengerJoined(_ context.Context, m *gcppub
 				return f.Error
 			}
 
-			return nil
+			game, err := b.findGameByFlowID(messagePayload.GameId)
+			if err != nil {
+				log.Warn().Err(err).Msg("Error while sending ChallengerJoined ws message")
+				return err
+			}
+			wsEvent := map[string]any{
+				"type": "CHALLENGER_JOINED",
+				"payload": map[string]any{
+					"challengerName": user.Username,
+					"turn":        messagePayload.Turn,
+					"gameStatus": "PLAYING",
+				},
+			}
 
+			b.notificationHub.Publish(fmt.Sprintf("game/%d", game.Id), wsEvent)
+
+			return nil
 		})
 
-		game, err := b.findGameByFlowID(messagePayload.GameId)
-		if err != nil {
-			log.Warn().Err(err).Msg("Error while sending ChallengerJoined ws message")
-			return
-		}
-		wsEvent := map[string]any{
-			"type": "CHALLENGER_JOINED",
-			"payload": map[string]any{
-				"turn":        messagePayload.Turn,
-				"game_status": "PLAYING",
-			},
-		}
-
-		b.notificationHub.Publish(fmt.Sprintf("game/%d", game.Id), wsEvent)
 	}
 	m.Ack()
 
