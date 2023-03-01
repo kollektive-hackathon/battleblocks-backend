@@ -546,7 +546,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 
 	verify, err := merkletree.VerifyProof([]byte(CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), true, string(nonceNumber))), proof, mtree.Root())
 
-	fmt.Errorf("verifying root %v", verify)
+	log.Error().Interface("verify root", verify).Msg("VERIFY ROOT:")
 
 	gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, proof.Hashes,
 		&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber, userAuthorizer)
