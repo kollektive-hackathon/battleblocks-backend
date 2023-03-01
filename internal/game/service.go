@@ -42,8 +42,8 @@ type MoveHistoryWithHit struct {
 	ID          uint64 `gorm:"column:id" json:"id"`
 	UserID      uint64 `gorm:"column:user_id" json:"userId"`
 	GameID      uint64 `gorm:"column:game_id" json:"gameId"`
-	Coordinatex int    `gorm:"column:coordinate_x" json:"x"`
-	Coordinatey int    `gorm:"column:coordinate_y" json:"y"`
+	Coordinatex int    `gorm:"column:coordinatex" json:"x"`
+	Coordinatey int    `gorm:"column:coordinatey" json:"y"`
 	PlayedAt    uint64 `gorm:"column:played_at" json:"playedAt"`
 	IsHit       bool   `gorm:"-" json:"isHit"`
 }
@@ -522,7 +522,6 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		int32(opponentProofData.CoordinateY),
 		opponentProofData.BlockPresent,
 		opponentProofData.Nonce)
-
 
 	proof, err := mtree.GenerateProof([]byte(proofNode))
 	if err != nil {
