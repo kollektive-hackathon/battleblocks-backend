@@ -134,7 +134,7 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 		game, err := b.findGameByFlowID(messagePayload.GameId)
 		result := tx.
 			Model(&model.Game{}).
-			Where("id = ?", messagePayload.GameId).
+			Where("id = ?", game.Id).
 			Updates(map[string]any{
 				"turn": messagePayload.Turn,
 			})
