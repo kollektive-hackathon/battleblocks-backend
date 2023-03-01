@@ -545,9 +545,11 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 
 	nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 10, 64)
 
-	verify, err := merkletree.VerifyProofUsing([]byte(CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), opponentProofData.BlockPresent, string(nonceNumber))), proof, mtree.Root(), keccak.New(), nil)
+	verify, err := merkletree.VerifyProofUsing([]byte(CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), opponentProofData.BlockPresent, fmt.Sprint(nonceNumber))), proof, mtree.Root(), keccak.New(), nil)
 
 	verifyProof, err := merkletree.VerifyProofUsing([]byte(proofNode), proof, mtree.Root(), keccak.New(), nil)
+
+	log.Error().Interface("nonce", nonceNumber).Msg("Nonce number")
 
 	log.Error().Interface("verify root", verify).Msg("VERIFY ROOT DEBUG:")
 
