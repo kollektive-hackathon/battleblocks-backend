@@ -125,15 +125,6 @@ func (b *gameContractBridge) sendMove(
 	pubsub.Publish(cmd)
 }
 
-func CreateMerkleTreeNode(x, y int32, present bool, nonce string) string {
-	// Format: SHIP_PRESENT|X|Y|NONCE
-	var sp int8
-	if present {
-		sp = 1
-	}
-	return fmt.Sprintf("%v%v%v%v", sp, x, y, nonce)
-}
-
 func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.Message) {
 	log.Info().Msg("Received message payload " + string(message.Data))
 	messagePayload, err := utils.JsonDecodeByteStream[Moved](message.Data)
