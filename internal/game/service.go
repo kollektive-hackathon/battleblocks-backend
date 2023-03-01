@@ -545,11 +545,33 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 
 	nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 10, 64)
 
-	verify, err := merkletree.VerifyProofUsing([]byte(CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), true, string(nonceNumber))), proof, mtree.Root(), keccak.New(), nil)
+	var isHit bool
+	result = gs.db.
+		Raw(`
+		SELECT EXISTS(
+		SELECT 1 
+		FROM game_grid_point 
+		WHERE game_id = ? 
+		AND coordinate_x = ? 
+		AND coordinate_y = ? 
+		AND block_present = true);
+		`, game.Id, opponentProofData.CoordinateX, opponentProofData.CoordinateY).
+		Scan(&isHit)
 
-	log.Error().Interface("verify root", verify).Msg("VERIFY ROOT:")
+	if result.Error != nil {
+		log.Warn().Err(result.Error).Msg("Cannot fetch isHit for player move")
+		// should have proper ws error signal implemented
+		// but not necessary for this poc
+		isHit = false
+	}
 
-	log.Error().Interface("proof", proof).Msg("VERIFY PROOF:")
+	verify, err := merkletree.VerifyProofUsing([]byte(CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), isHit, string(nonceNumber))), proof, mtree.Root(), keccak.New(), nil)
+
+	log.Error().Interface("verify root", verify).Msg("VERIFY ROOT DEBUG:")
+
+	log.Error().Interface("proof", proof).Msg("LOG PROOF:")
+
+	log.Error().Interface("proof hashes", proof.Hashes).Msg("LOG PROOF:")
 
 	gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, proof.Hashes,
 		&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber, userAuthorizer)
