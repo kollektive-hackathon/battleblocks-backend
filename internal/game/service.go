@@ -473,7 +473,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		opponent = game.OwnerId
 	}
 
-	opponentProofData, proofDataLoadErr := gs.getLastOpponentMoveProofData(gameId, opponent)
+	opponentProofData, proofDataLoadErr := gs.getLastOpponentMoveProofData(gameId, opponent, user.Id)
 
 	if errors.Is(proofDataLoadErr, gorm.ErrRecordNotFound) {
 		cw := gs.getCustodialWallet(userEmail)
@@ -535,23 +535,16 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 	return nil
 }
 
-func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, opponentId uint64) (*model.GameGridPoint, error) {
+func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, opponentId uint64, currUserId uint64) (*model.GameGridPoint, error) {
 	var proofData model.GameGridPoint
 	result := gs.db.Raw(`
-		SELECT game_grid_point.game_id
-             , game_grid_point.user_id
-             , game_grid_point.block_present
-             , game_grid_point.coordinate_x
-             , game_grid_point.coordinate_y
-             , game_grid_point.nonce
-          FROM game_grid_point
-	INNER JOIN move_history 
-			ON move_history.game_id = game_grid_point.game_id 
-		   AND move_history.user_id = game_grid_point.user_id
-         WHERE move_history.game_id = ?
-           AND move_history.user_id = ?
-	ORDER BY played_at DESC LIMIT 1
-    `, gameId, opponentId).First(&proofData)
+	select game_grid_point.* from game_grid_point
+    LEFT JOIN move_history mh ON game_grid_point.game_id = mh.game_id
+                                     AND mh.coordinatey = game_grid_point.coordinate_y
+                                     AND mh.coordinatex = game_grid_point.coordinate_x
+                                    AND mh.user_id = $2
+    WHERE game_grid_point.user_id = $1 AND game_grid_point.game_id = $3 order by mh.played_at ASC LIMIT 1
+    `, currUserId, opponentId, gameId).First(&proofData)
 
 	if result.Error != nil {
 		return nil, result.Error
