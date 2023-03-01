@@ -547,7 +547,11 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 
 	verify, err := merkletree.VerifyProofUsing([]byte(CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), opponentProofData.BlockPresent, string(nonceNumber))), proof, mtree.Root(), keccak.New(), nil)
 
+	verifyProof, err := merkletree.VerifyProofUsing([]byte(proofNode), proof, mtree.Root(), keccak.New(), nil)
+
 	log.Error().Interface("verify root", verify).Msg("VERIFY ROOT DEBUG:")
+
+	log.Error().Interface("verify proof", verifyProof).Msg("VERIFY PROOF DEBUG:")
 
 	log.Error().Interface("proof", proof).Msg("LOG PROOF:")
 
@@ -586,6 +590,7 @@ func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, opponentId ui
 		return nil, result.Error
 	}
 
+	log.Error().Interface("proof data", proofData).Msg("PROOF DATA:")
 	// result := gs.db.Raw(`
 	// select game_grid_point.* from game_grid_point
 	// LEFT JOIN move_history mh ON game_grid_point.game_id = mh.game_id
