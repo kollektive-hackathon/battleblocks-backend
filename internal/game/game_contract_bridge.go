@@ -118,6 +118,8 @@ func (b *gameContractBridge) sendMove(
 		nonce,
 	}
 
+	log.Info().Interface("payload", payload).Msg("Senging Move Transaction to TX Service:")
+
 	authorizers := []blockchain.Authorizer{userAuthorizer, blockchain.GetAdminAuthorizer()}
 	cmd := blockchain.NewBlockchainCommand(commandType, payload, authorizers)
 	pubsub.Publish(cmd)
@@ -401,6 +403,7 @@ func byteArrayToUint(data []byte) []uint64 {
 }
 
 func twoDimensionalbyteArrayToTwoDimensionalUint64Array(data [][]byte) [][]uint64 {
+	log.Info().Interface("data", data).Msg("Converting Byte Array to 2D UInt64 Array:")
 	uint64Data := make([][]uint64, len(data))
 	for i, row := range data {
 		uint64Data[i] = make([]uint64, len(row))
