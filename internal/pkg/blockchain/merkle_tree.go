@@ -11,7 +11,8 @@ import (
 
 	mtreeOld "github.com/cbergoon/merkletree"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
-	merkletree "github.com/wealdtech/go-merkletree"
+	"github.com/wealdtech/go-merkletree"
+	keccak "github.com/wealdtech/go-merkletree/keccak256"
 )
 
 type TreeContent struct {
@@ -86,7 +87,7 @@ func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64
 		}
 	}
 
-	mt, err := merkletree.New(treeData)
+	mt, err := merkletree.NewUsing(treeData, keccak.New(), nil)
 	if err != nil {
 		log.Warn().Err(err).Msg("Error while creating merkle tree")
 		return nil, nil, err
@@ -106,7 +107,8 @@ func CreateMerkleTreeFromData(presentData []model.GameGridPoint) (*merkletree.Me
 		treeData = append(treeData, []byte(d))
 	}
 
-	mt, err := merkletree.New(treeData)
+	mt, err := merkletree.NewUsing(treeData, keccak.New(), nil)
+
 	if err != nil {
 		log.Warn().Err(err).Msg("Error while creating merkle tree")
 		return nil, nil, err
@@ -180,5 +182,5 @@ func getStringInBetween(str string, start string, end string) (result string) {
 }
 
 func randomString() string {
-	return fmt.Sprintf("%05d", rand.Intn(10000))
+	return fmt.Sprintf("%05d", rand.Intn(99999-10000)+10000)
 }
