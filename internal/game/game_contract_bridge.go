@@ -138,8 +138,8 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 	mh := model.MoveHistory{
 		UserId:      messagePayload.PlayerId,
 		GameId:      game.Id,
-		CoordinateX: messagePayload.X,
-		CoordinateY: messagePayload.Y,
+		Coordinatex: messagePayload.X,
+		Coordinatey: messagePayload.Y,
 		PlayedAt:    time.Now().UTC().UnixMilli(),
 	}
 
