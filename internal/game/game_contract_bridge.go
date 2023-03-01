@@ -137,7 +137,7 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 			Where("id = ?", messagePayload.GameId).
 			Updates(map[string]any{
 				"turn": messagePayload.Turn,
-		})
+			})
 
 		if result.Error != nil {
 			log.Warn().Err(result.Error).Msg("Error while handling Moved")
@@ -174,7 +174,6 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 			return result.Error
 		}
 
-
 		var isHit bool
 		result = tx.
 			Raw(`
@@ -186,7 +185,7 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 			AND coordinate_y = ? 
 			AND block_present = true);
 			`, messagePayload.GameId, messagePayload.X, messagePayload.Y).
-		Scan(&isHit)
+			Scan(&isHit)
 
 		if result.Error != nil {
 			log.Warn().Err(result.Error).Msg("Cannot fetch isHit for player move")
@@ -205,7 +204,7 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 				"isHit":  isHit,
 			},
 		}
-		b.notificationHub.Publish(fmt.Sprintf("game/%d", messagePayload.GameId), wsEvent)
+		b.notificationHub.Publish(fmt.Sprintf("game/%d", game.Id), wsEvent)
 		return nil
 	})
 	if er != nil {
