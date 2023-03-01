@@ -22,6 +22,7 @@ type Moved struct {
 	GameId        uint64 `json:"gameID"`
 	PlayerId      uint64 `json:"gamePlayerID"`
 	PlayerAddress string `json:"playerAddress"`
+	Turn          uint64 `json:"turn"`
 	X             uint   `json:"coordinateX"`
 	Y             uint   `json:"coordinateY"`
 }
@@ -129,71 +130,89 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 		return
 	}
 
-	game, err := b.findGameByFlowID(messagePayload.GameId)
-	if err != nil {
-		log.Warn().Err(err).Msg("Error while sending ChallengerJoined ws message")
-		return
-	}
+	er := b.db.Transaction(func(tx *gorm.DB) error {
+		game, err := b.findGameByFlowID(messagePayload.GameId)
+		result := tx.
+			Model(&model.Game{}).
+			Where("id = ?", messagePayload.GameId).
+			Updates(map[string]any{
+				"turn": messagePayload.Turn,
+		})
 
-	var user model.User
-	f := b.db.Raw(`SELECT bu.* FROM battleblocks_user bu
-		LEFT JOIN custodial_wallet cw ON bu.custodial_wallet_id = cw.id
-		WHERE cw.address = ?`, messagePayload.PlayerAddress).First(&user)
+		if result.Error != nil {
+			log.Warn().Err(result.Error).Msg("Error while handling Moved")
+			return result.Error
+		}
 
-	if f.Error != nil {
-		log.Warn().Err(err).Msg("Error while handling moved message")
-		return
-	}
-	
+		if err != nil {
+			log.Warn().Err(err).Msg("Error while sending ChallengerJoined ws message")
+			return result.Error
+		}
 
-	mh := model.MoveHistory{
-		UserId:      user.Id,
-		GameId:      game.Id,
-		Coordinatex: messagePayload.X,
-		Coordinatey: messagePayload.Y,
-		PlayedAt:    time.Now().UTC().UnixMilli(),
-	}
+		var user model.User
+		f := tx.Raw(`SELECT bu.* FROM battleblocks_user bu
+			LEFT JOIN custodial_wallet cw ON bu.custodial_wallet_id = cw.id
+			WHERE cw.address = ?`, messagePayload.PlayerAddress).First(&user)
 
-	result := b.db.Table("move_history").Create(&mh)
+		if f.Error != nil {
+			log.Warn().Err(err).Msg("Error while handling moved message")
+			return f.Error
+		}
 
-	if result.Error != nil {
-		log.Warn().Err(result.Error).Msg("Error while handling Moved")
-		return
-	}
+		mh := model.MoveHistory{
+			UserId:      user.Id,
+			GameId:      game.Id,
+			Coordinatex: messagePayload.X,
+			Coordinatey: messagePayload.Y,
+			PlayedAt:    time.Now().UTC().UnixMilli(),
+		}
 
-	message.Ack()
+		result = tx.Table("move_history").Create(&mh)
 
-	var isHit bool
-	result = b.db.
-		Raw(`
+		if result.Error != nil {
+			log.Warn().Err(result.Error).Msg("Error while handling Moved")
+			return result.Error
+		}
+
+
+		var isHit bool
+		result = tx.
+			Raw(`
 			SELECT EXISTS(
-				SELECT 1 
-				FROM game_grid_point 
-				WHERE game_id = ? 
-				  AND coordinate_x = ? 
-				  AND coordinate_y = ? 
-				  AND block_present = true);
-        `, messagePayload.GameId, messagePayload.X, messagePayload.Y).
+			SELECT 1 
+			FROM game_grid_point 
+			WHERE game_id = ? 
+			AND coordinate_x = ? 
+			AND coordinate_y = ? 
+			AND block_present = true);
+			`, messagePayload.GameId, messagePayload.X, messagePayload.Y).
 		Scan(&isHit)
 
-	if result.Error != nil {
-		log.Warn().Err(result.Error).Msg("Cannot fetch isHit for player move")
-		// should have proper ws error signal implemented
-		// but not necessary for this poc
-		isHit = false
-	}
+		if result.Error != nil {
+			log.Warn().Err(result.Error).Msg("Cannot fetch isHit for player move")
+			// should have proper ws error signal implemented
+			// but not necessary for this poc
+			isHit = false
+		}
 
-	wsEvent := map[string]any{
-		"type": "MOVE_DONE",
-		"payload": map[string]any{
-			"gameId": messagePayload.GameId,
-			"userId": messagePayload.PlayerId,
-			"x":      messagePayload.X,
-			"y":      messagePayload.Y,
-			"isHit":  isHit,
-		},
+		wsEvent := map[string]any{
+			"type": "MOVE_DONE",
+			"payload": map[string]any{
+				"gameId": messagePayload.GameId,
+				"userId": messagePayload.PlayerId,
+				"x":      messagePayload.X,
+				"y":      messagePayload.Y,
+				"isHit":  isHit,
+			},
+		}
+		b.notificationHub.Publish(fmt.Sprintf("game/%d", messagePayload.GameId), wsEvent)
+		return nil
+	})
+	if er != nil {
+		log.Warn().Err(err).Msg("Cannot handle move event")
+		return
 	}
-	b.notificationHub.Publish(fmt.Sprintf("game/%d", messagePayload.GameId), wsEvent)
+	message.Ack()
 }
 
 func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppubsub.Message) {
@@ -208,8 +227,8 @@ func (b *gameContractBridge) handleGameCreated(_ context.Context, message *gcppu
 		Model(&model.Game{}).
 		Where("id = ?", messagePayload.Payload).
 		Updates(map[string]any{
-			"flow_id": messagePayload.GameId,
-			"game_status":  "CREATED",
+			"flow_id":     messagePayload.GameId,
+			"game_status": "CREATED",
 		})
 
 	if result.Error != nil {
@@ -272,8 +291,8 @@ func (b *gameContractBridge) handleChallengerJoined(_ context.Context, m *gcppub
 				"type": "CHALLENGER_JOINED",
 				"payload": map[string]any{
 					"challengerName": user.Username,
-					"turn":        messagePayload.Turn,
-					"gameStatus": "PLAYING",
+					"turn":           messagePayload.Turn,
+					"gameStatus":     "PLAYING",
 				},
 			}
 
