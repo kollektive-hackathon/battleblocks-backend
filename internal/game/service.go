@@ -443,6 +443,8 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 
 	mtree, _, err := blockchain.CreateMerkleTreeFromData(currentUserData)
 
+	log.Error().Interface("mtree",byteArrayToUint(mtree.Root())).Msg("PLAYING MOVE MERKLE TREE")
+
 	if err != nil {
 		return &reject.ProblemWithTrace{
 			Problem: reject.UnexpectedProblem(result.Error),
@@ -676,3 +678,4 @@ func pointFromData(singlePoint string, gameId uint64, userId uint64) *model.Game
 		Nonce:        nonce,
 	}
 }
+
