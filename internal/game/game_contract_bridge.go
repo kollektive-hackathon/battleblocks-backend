@@ -143,7 +143,7 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 		PlayedAt:    time.Now().UTC().UnixMilli(),
 	}
 
-	result := b.db.Create(&mh)
+	result := b.db.Table("move_history").Create(&mh)
 
 	if result.Error != nil {
 		log.Warn().Err(result.Error).Msg("Error while handling Moved")
