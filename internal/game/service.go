@@ -549,6 +549,8 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 
 	log.Error().Interface("verify root", verify).Msg("VERIFY ROOT:")
 
+	log.Error().Interface("proof", proof).Msg("VERIFY PROOF:")
+
 	gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, proof.Hashes,
 		&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber, userAuthorizer)
 
