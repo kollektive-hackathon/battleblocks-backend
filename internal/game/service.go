@@ -20,6 +20,7 @@ import (
 	"github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go-sdk/access/grpc"
 	"github.com/rs/zerolog/log"
+	keccak "github.com/wealdtech/go-merkletree/keccak256"
 	"gorm.io/gorm"
 )
 
@@ -544,7 +545,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 
 	nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 10, 64)
 
-	verify, err := merkletree.VerifyProof([]byte(CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), true, string(nonceNumber))), proof, mtree.Root())
+	verify, err := merkletree.VerifyProofUsing([]byte(CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), true, string(nonceNumber))), proof, mtree.Root(), keccak.New(), nil)
 
 	log.Error().Interface("verify root", verify).Msg("VERIFY ROOT:")
 

@@ -4,11 +4,12 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"math/rand"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	mtreeOld "github.com/cbergoon/merkletree"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
@@ -20,7 +21,7 @@ type TreeContent struct {
 	Field string
 }
 
-//CalculateHash hashes the values of a TestContent
+// CalculateHash hashes the values of a TestContent
 func (t TreeContent) CalculateHash() ([]byte, error) {
 	h := sha256.New()
 	if _, err := h.Write([]byte(t.Field)); err != nil {
@@ -30,7 +31,7 @@ func (t TreeContent) CalculateHash() ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
-//Equals tests for equality of two Contents
+// Equals tests for equality of two Contents
 func (t TreeContent) Equals(other mtreeOld.Content) (bool, error) {
 	otherTC, ok := other.(TreeContent)
 	if !ok {
@@ -45,6 +46,7 @@ func CreateMerkleTreeNode(x, y int32, present bool, nonce string) string {
 	if present {
 		sp = 1
 	}
+	log.Printf("%v%v%v%v", sp, x, y, nonce)
 	return fmt.Sprintf("%v%v%v%v", sp, x, y, nonce)
 }
 
