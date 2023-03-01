@@ -80,8 +80,6 @@ func (b *gameContractBridge) sendCreateGameTx(stake float32, rootMerkel []byte, 
 
 	uint8Merkle := byteArrayToUint(rootMerkel)
 
-	log.Error().Interface("mtree", uint8Merkle).Msg("MERKEL TREE WHEN CREATING:")
-
 	payload := []any{
 		stake,
 		uint8Merkle,

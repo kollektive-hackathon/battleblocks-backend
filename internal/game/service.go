@@ -523,9 +523,8 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		opponentProofData.BlockPresent,
 		opponentProofData.Nonce)
 
-	whatisit := []byte(proofNode)
 
-	proof, err := mtree.GenerateProof(whatisit[:8])
+	proof, err := mtree.GenerateProof([]byte(proofNode))
 	if err != nil {
 		return &reject.ProblemWithTrace{
 			Problem: reject.UnexpectedProblem(err),
