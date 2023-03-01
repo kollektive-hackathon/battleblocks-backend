@@ -443,6 +443,19 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		}
 	}
 
+	var user model.User
+	result = gs.db.
+		Model(&model.User{}).
+		Where("email = ?", userEmail).
+		Find(&user)
+
+	if result.Error != nil {
+		return &reject.ProblemWithTrace{
+			Problem: reject.UnexpectedProblem(result.Error),
+			Cause:   result.Error,
+		}
+	}
+
 	var game model.Game
 	result = gs.db.
 		Model(&model.Game{}).
@@ -455,7 +468,12 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		}
 	}
 
-	opponentProofData, proofDataLoadErr := gs.getLastOpponentMoveProofData(gameId, userEmail)
+	opponent := *game.ChallengerId
+	if *game.ChallengerId == user.Id {
+		opponent = game.OwnerId
+	}
+
+	opponentProofData, proofDataLoadErr := gs.getLastOpponentMoveProofData(gameId, opponent)
 
 	if errors.Is(proofDataLoadErr, gorm.ErrRecordNotFound) {
 		cw := gs.getCustodialWallet(userEmail)
@@ -517,7 +535,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 	return nil
 }
 
-func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, userEmail string) (*model.GameGridPoint, error) {
+func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, opponentId uint64) (*model.GameGridPoint, error) {
 	var proofData model.GameGridPoint
 	result := gs.db.Raw(`
 		SELECT game_grid_point.game_id
@@ -531,9 +549,9 @@ func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, userEmail str
 			ON move_history.game_id = game_grid_point.game_id 
 		   AND move_history.user_id = game_grid_point.user_id
          WHERE move_history.game_id = ?
-           AND move_history.user_id = (SELECT id FROM battleblocks_user WHERE email = ?)
+           AND move_history.user_id = ?
 	ORDER BY played_at DESC LIMIT 1
-    `, gameId, userEmail).First(&proofData)
+    `, gameId, opponentId).First(&proofData)
 
 	if result.Error != nil {
 		return nil, result.Error
