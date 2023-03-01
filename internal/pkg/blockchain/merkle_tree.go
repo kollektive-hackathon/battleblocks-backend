@@ -95,6 +95,26 @@ func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64
 	return mt, treeData, nil
 }
 
+func CreateMerkleTreeFromData(presentData []model.GameGridPoint) (*merkletree.MerkleTree, [][]byte, error) {
+	treeData := [][]byte{}
+	for _, data := range presentData {
+		d := CreateMerkleTreeNode(
+			int32(data.CoordinateX),
+			int32(data.CoordinateY),
+			data.BlockPresent,
+			data.Nonce)
+		treeData = append(treeData, []byte(d))
+	}
+
+	mt, err := merkletree.New(treeData)
+	if err != nil {
+		log.Warn().Err(err).Msg("Error while creating merkle tree")
+		return nil, nil, err
+	}
+
+	return mt, treeData, nil
+}
+
 // TODO remove
 /*func CreateMerkleTreeOld(presentPlacements []model.Placement, blocksById map[uint64]model.Block) (*mtreeOld.MerkleTree, error) {
 	var li [][]mtreeOld.Content

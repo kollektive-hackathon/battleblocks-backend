@@ -427,12 +427,12 @@ func (gs *gameService) getGame(gameId uint64) (*GameResponse, *reject.ProblemWit
 }
 
 func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMoveRequest) *reject.ProblemWithTrace {
-	var currentUserBlockPlacements []model.Placement
+	var currentUserData []model.GameGridPoint
+
 	result := gs.db.
-		Model(&model.BlockPlacement{}).
+		Table("game_grid_point").
 		Where("game_id = ? AND user_id = (SELECT bu.id FROM battleblocks_user bu WHERE email = ?)", gameId, userEmail).
-		Select("block_id, coordinatex AS x, coordinatey AS y").
-		Find(&currentUserBlockPlacements)
+		Find(&currentUserData)
 
 	if result.Error != nil {
 		return &reject.ProblemWithTrace{
@@ -441,37 +441,14 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		}
 	}
 
-	blockIds := []uint64{}
-	for _, v := range currentUserBlockPlacements {
-		blockIds = append(blockIds, v.BlockId)
-	}
+	mtree, _, err := blockchain.CreateMerkleTreeFromData(currentUserData)
 
-	var blocks []model.Block
-	result = gs.db.
-		Model(&model.Block{}).
-		Where("id IN ?", blockIds).
-		Find(&blocks)
-
-	if result.Error != nil {
-		return &reject.ProblemWithTrace{
-			Problem: reject.UnexpectedProblem(result.Error),
-			Cause:   result.Error,
-		}
-	}
-
-	blockMap := map[uint64]model.Block{}
-	for _, v := range blocks {
-		blockMap[v.Id] = v
-	}
-
-	mtree, _, err := blockchain.CreateMerkleTree(currentUserBlockPlacements, blockMap)
 	if err != nil {
 		return &reject.ProblemWithTrace{
 			Problem: reject.UnexpectedProblem(result.Error),
 			Cause:   result.Error,
 		}
 	}
-
 	var user model.User
 	result = gs.db.
 		Model(&model.User{}).
@@ -544,7 +521,9 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		opponentProofData.BlockPresent,
 		opponentProofData.Nonce)
 
-	proof, err := mtree.GenerateProof([]byte(proofNode))
+	whatisit := []byte(proofNode)
+
+	proof, err := mtree.GenerateProof(whatisit[:8])
 	if err != nil {
 		return &reject.ProblemWithTrace{
 			Problem: reject.UnexpectedProblem(err),
@@ -563,7 +542,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 
 	userAuthorizer := blockchain.Authorizer{KmsResourceId: cw.ResourceId, ResourceOwnerAddress: *cw.Address}
 
-	nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 0, 64)
+	nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 10, 64)
 	gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, proof.Hashes,
 		&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber, userAuthorizer)
 
@@ -583,18 +562,18 @@ func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, opponentId ui
 	var mh model.MoveHistory
 
 	result := gs.db.Raw(`select move_history.* from
-		move_history WHERE move_history.game_id = ? AND move_history.user_id = ? ORDER BY played_at DESC LIMIT 1`, gameId, opponentId)
+		move_history WHERE move_history.game_id = ? AND move_history.user_id = ? ORDER BY played_at DESC LIMIT 1`, gameId, opponentId).Scan(&mh)
 	if result.Error != nil {
-		return nil , result.Error
+		return nil, result.Error
 	}
 
 	var proofData model.GameGridPoint
 	result = gs.db.Raw(`
-		SELECT ggp.* FROM game_grid_point ggp where ggp.coordinate_x = ? AND coordinate_y = ? AND ggp.game_id = ? AND ggp.user_id = ?
+		SELECT ggp.coordinate_x as coordinatex, ggp.coordinate_y as coordinatey,ggp.* FROM game_grid_point ggp where ggp.coordinate_x = ? AND coordinate_y = ? AND ggp.game_id = ? AND ggp.user_id = ?
 		`, mh.Coordinatex, mh.Coordinatey, gameId, currUserId).First(&proofData)
 
 	if result.Error != nil {
-		return nil , result.Error
+		return nil, result.Error
 	}
 
 	// result := gs.db.Raw(`
