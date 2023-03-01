@@ -119,9 +119,19 @@ func (b *gameContractBridge) sendMove(
 		opponentGuessY,
 		nonce,
 	}
+
 	authorizers := []blockchain.Authorizer{userAuthorizer, blockchain.GetAdminAuthorizer()}
 	cmd := blockchain.NewBlockchainCommand(commandType, payload, authorizers)
 	pubsub.Publish(cmd)
+}
+
+func CreateMerkleTreeNode(x, y int32, present bool, nonce string) string {
+	// Format: SHIP_PRESENT|X|Y|NONCE
+	var sp int8
+	if present {
+		sp = 1
+	}
+	return fmt.Sprintf("%v%v%v%v", sp, x, y, nonce)
 }
 
 func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.Message) {
@@ -317,11 +327,21 @@ func (b *gameContractBridge) handleGameOver(_ context.Context, message *gcppubsu
 		return
 	}
 
+	var user model.User
+	f := b.db.Raw(`SELECT bu.* FROM battleblocks_user bu
+		LEFT JOIN custodial_wallet cw ON bu.custodial_wallet_id = cw.id
+		WHERE cw.address = ?`, messagePayload.Winner).First(&user)
+
+	if f.Error != nil {
+		log.Warn().Err(f.Error).Msg("Error while fetching winner account")
+		return
+	}
+
 	result := b.db.
 		Model(&model.Game{}).
 		Where("flow_id = ?", messagePayload.GameId).
 		Updates(map[string]any{
-			"winner":      messagePayload.Winner,
+			"winner":      user.Id,
 			"game_status": "FINISHED",
 		})
 
