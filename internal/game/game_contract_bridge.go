@@ -184,7 +184,7 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 			AND coordinate_x = ? 
 			AND coordinate_y = ? 
 			AND block_present = true);
-			`, messagePayload.GameId, messagePayload.X, messagePayload.Y).
+			`, game.Id, messagePayload.X, messagePayload.Y).
 			Scan(&isHit)
 
 		if result.Error != nil {

@@ -37,6 +37,16 @@ type GameResponse struct {
 	ChallengerName *string `json:"challengerUsername"`
 }
 
+type MoveHistoryWithHit struct {
+	ID          uint64    `gorm:"column:id" json:"id"`
+	UserID      uint64    `gorm:"column:user_id" json:"userId"`
+	GameID      uint64    `gorm:"column:game_id" json:"gameId"`
+	Coordinatex int       `gorm:"column:coordinate_x" json:"x"`
+	Coordinatey int       `gorm:"column:coordinate_y" json:"y"`
+	PlayedAt    time.Time `gorm:"column:played_at" json:"playedAt"`
+	IsHit       bool      `gorm:"-" json:"isHit"`
+}
+
 func (gs *gameService) getGames(page utils.PageRequest, userEmail string) ([]GameResponse, *int64, *reject.ProblemWithTrace) {
 	games := []GameResponse{}
 	gamesSize := int64(0)
@@ -359,10 +369,10 @@ func (gs *gameService) getPlacements(gameId uint64, userEmail string) ([]Placeme
 	return placements, nil
 }
 
-func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHistory, *reject.ProblemWithTrace) {
-	var moves []model.MoveHistory
+func (gs *gameService) getMoves(gameID uint64, userEmail string) ([]MoveHistoryWithHit, *reject.ProblemWithTrace) {
+	moves := []MoveHistoryWithHit{}
 	result := gs.db.Table("move_history").
-		Where("game_id = ?", gameId).
+		Where("game_id = ?", gameID).
 		Order("played_at DESC").
 		Find(&moves)
 
@@ -371,6 +381,25 @@ func (gs *gameService) getMoves(gameId uint64, userEmail string) ([]model.MoveHi
 			Problem: reject.UnexpectedProblem(result.Error),
 			Cause:   result.Error,
 		}
+	}
+
+	for i := range moves {
+		var isHit bool
+		rslt := gs.db.Table("game_grid_point").
+			Where("game_id = ? AND coordinate_x = ? AND coordinate_y = ? AND block_present = true",
+				moves[i].GameID, moves[i].Coordinatex, moves[i].Coordinatey).
+			Select("EXISTS(SELECT 1 FROM game_grid_point WHERE game_id = ? AND coordinate_x = ? AND coordinate_y = ? AND block_present = true)",
+				moves[i].GameID, moves[i].Coordinatex, moves[i].Coordinatey).
+			Scan(&isHit)
+
+		if rslt.Error != nil {
+			log.Warn().Err(result.Error).Msg("Cannot fetch isHit for player move")
+			// should have proper ws error signal implemented
+			// but not necessary for this poc
+			isHit = false
+		}
+
+		moves[i].IsHit = isHit
 	}
 
 	return moves, nil
