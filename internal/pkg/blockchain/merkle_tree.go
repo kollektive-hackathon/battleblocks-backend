@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"time"
 
 	mtreeOld "github.com/cbergoon/merkletree"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
@@ -182,5 +183,6 @@ func getStringInBetween(str string, start string, end string) (result string) {
 }
 
 func randomString() string {
+	rand.Seed(time.Now().UnixNano())
 	return fmt.Sprintf("%05d", rand.Intn(99999-10000)+10000)
 }
