@@ -545,27 +545,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 
 	nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 10, 64)
 
-	var isHit bool
-	result = gs.db.
-		Raw(`
-		SELECT EXISTS(
-		SELECT 1 
-		FROM game_grid_point 
-		WHERE game_id = ? 
-		AND coordinate_x = ? 
-		AND coordinate_y = ? 
-		AND block_present = true);
-		`, game.Id, opponentProofData.CoordinateX, opponentProofData.CoordinateY).
-		Scan(&isHit)
-
-	if result.Error != nil {
-		log.Warn().Err(result.Error).Msg("Cannot fetch isHit for player move")
-		// should have proper ws error signal implemented
-		// but not necessary for this poc
-		isHit = false
-	}
-
-	verify, err := merkletree.VerifyProofUsing([]byte(CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), isHit, string(nonceNumber))), proof, mtree.Root(), keccak.New(), nil)
+	verify, err := merkletree.VerifyProofUsing([]byte(CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), opponentProofData.BlockPresent, string(nonceNumber))), proof, mtree.Root(), keccak.New(), nil)
 
 	log.Error().Interface("verify root", verify).Msg("VERIFY ROOT DEBUG:")
 
