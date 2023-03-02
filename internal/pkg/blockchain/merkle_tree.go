@@ -9,11 +9,10 @@ import (
 	"strings"
 	"time"
 
-	eth "github.com/ethereum/go-ethereum/crypto"
-	"github.com/rs/zerolog/log"
-
 	mtreeOld "github.com/cbergoon/merkletree"
+	eth "github.com/ethereum/go-ethereum/crypto"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
+	"github.com/rs/zerolog/log"
 	"github.com/wealdtech/go-merkletree"
 	keccak "github.com/wealdtech/go-merkletree/keccak256"
 )
@@ -53,15 +52,15 @@ func CreateMerkleTreeNode(x, y int32, present bool, nonce string) []byte {
 }
 
 func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64]model.Block) (*merkletree.MerkleTree, [][]byte, error) {
-	li := make([][][]byte, 10)
+	li := make([][]interface{}, 10)
 	for i := range li {
-		li[i] = make([][]byte, 10)
+		li[i] = make([]interface{}, 10)
 	}
 
 	for i := 0; i < 10; i++ {
 		for j := 0; j < 10; j++ {
-			node := CreateMerkleTreeNode(int32(i), int32(j), false, randomString())
-			li[i][j] = []byte(node)
+			nodeInStr := CreateMerkleTreeNode(int32(i), int32(j), false, randomString())
+			li[i][j] = nodeInStr
 		}
 	}
 
@@ -74,13 +73,13 @@ func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64
 		for _, single := range firstRow {
 			singleNr, _ := strconv.ParseUint(string(single), 10, 32)
 			nodeInStr := CreateMerkleTreeNode(int32(placement.X)+(int32(singleNr)-1), int32(placement.Y), true, randomString())
-			li[int32(placement.X)+int32(singleNr)-1][int32(placement.Y)] = []byte(nodeInStr)
+			li[int32(placement.X)+int32(singleNr)-1][int32(placement.Y)] = nodeInStr
 		}
 
 		for _, single := range secondRow {
 			singleNr, _ := strconv.ParseUint(string(single), 10, 32)
 			nodeInStr := CreateMerkleTreeNode(int32(placement.X)+int32(singleNr)-1, int32(placement.Y)+1, true, randomString())
-			li[int32(placement.X)+int32(singleNr)-1][int32(placement.Y)+1] = []byte(nodeInStr)
+			li[int32(placement.X)+int32(singleNr)-1][int32(placement.Y)+1] = nodeInStr
 		}
 	}
 
@@ -88,11 +87,11 @@ func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64
 
 	for i := 0; i < 10; i++ {
 		for j := 0; j < 10; j++ {
-			treeData = append(treeData, li[i][j])
+			treeData = append(treeData, li[i][j].([]byte))
 		}
 	}
 
-	mt, err := merkletree.NewUsing(treeData, keccak.New(), nil)
+	mt, err := merkletree.New(treeData)
 	if err != nil {
 		log.Warn().Err(err).Msg("Error while creating merkle tree")
 		return nil, nil, err

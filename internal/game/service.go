@@ -545,7 +545,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 
 	nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 10, 64)
 
-	verify, err := merkletree.VerifyProofUsing(blockchain.CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), opponentProofData.BlockPresent, fmt.Sprint(nonceNumber)), proof, mtree.Root(), keccak.New(), nil)
+	verify, err := merkletree.VerifyProofUsing((blockchain.CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), opponentProofData.BlockPresent, fmt.Sprint(nonceNumber))), proof, mtree.Root(), keccak.New(), nil)
 
 	verifyProof, err := merkletree.VerifyProofUsing([]byte(proofNode), proof, mtree.Root(), keccak.New(), nil)
 
@@ -568,10 +568,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 func (gs *gameService) isFirstMove(gameId uint64) bool {
 	var moves []model.MoveHistory
 	gs.db.Raw("SELECT * FROM move_history mh WHERE mh.game_id = ?", gameId).Scan(&moves)
-	if len(moves) > 0 {
-		return false
-	}
-	return true
+	return len(moves) <= 0
 }
 
 func (gs *gameService) getLastOpponentMoveProofData(gameId uint64, opponentId uint64, currUserId uint64) (*model.GameGridPoint, error) {
