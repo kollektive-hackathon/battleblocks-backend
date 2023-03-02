@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	mtreeOld "github.com/cbergoon/merkletree"
-	eth "github.com/ethereum/go-ethereum/crypto"
-	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
 	"github.com/rs/zerolog/log"
+
+	mtreeOld "github.com/cbergoon/merkletree"
+	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
 	"github.com/wealdtech/go-merkletree"
 	keccak "github.com/wealdtech/go-merkletree/keccak256"
 )
@@ -40,21 +40,20 @@ func (t TreeContent) Equals(other mtreeOld.Content) (bool, error) {
 	return t.Field == otherTC.Field, nil
 }
 
-func CreateMerkleTreeNode(x, y int32, present bool, nonce string) []byte {
+func CreateMerkleTreeNode(x, y int32, present bool, nonce string) string {
 	// Format: SHIP_PRESENT|X|Y|NONCE
 	var sp int8
 	if present {
 		sp = 1
 	}
-	str := fmt.Sprintf("%v%v%v%v", sp, x, y, nonce)
-	hash := eth.Keccak256([]byte(str))
-	return hash
+	log.Printf("%v%v%v%v", sp, x, y, nonce)
+	return fmt.Sprintf("%v%v%v%v", sp, x, y, nonce)
 }
 
 func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64]model.Block) (*merkletree.MerkleTree, [][]byte, error) {
-	li := make([][]interface{}, 10)
+	li := make([][]string, 10)
 	for i := range li {
-		li[i] = make([]interface{}, 10)
+		li[i] = make([]string, 10)
 	}
 
 	for i := 0; i < 10; i++ {
@@ -87,11 +86,11 @@ func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64
 
 	for i := 0; i < 10; i++ {
 		for j := 0; j < 10; j++ {
-			treeData = append(treeData, li[i][j].([]byte))
+			treeData = append(treeData, []byte(li[i][j]))
 		}
 	}
 
-	mt, err := merkletree.New(treeData)
+	mt, err := merkletree.NewUsing(treeData, keccak.New(), nil)
 	if err != nil {
 		log.Warn().Err(err).Msg("Error while creating merkle tree")
 		return nil, nil, err
@@ -108,7 +107,7 @@ func CreateMerkleTreeFromData(presentData []model.GameGridPoint) (*merkletree.Me
 			int32(data.CoordinateY),
 			data.BlockPresent,
 			data.Nonce)
-		treeData = append(treeData, d)
+		treeData = append(treeData, []byte(d))
 	}
 
 	mt, err := merkletree.NewUsing(treeData, keccak.New(), nil)
