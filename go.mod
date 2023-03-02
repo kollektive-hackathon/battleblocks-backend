@@ -83,6 +83,8 @@ require (
 	github.com/texttheater/golang-levenshtein/levenshtein v0.0.0-20200805054039-cae8b0eaed6c // indirect
 	github.com/turbolent/prettier v0.0.0-20220320183459-661cc755135d // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
+	github.com/txaty/go-merkletree v0.1.15 // indirect
+	github.com/txaty/gool v0.1.4 // indirect
 	github.com/ugorji/go/codec v1.2.9 // indirect
 	github.com/wealdtech/go-merkletree v1.0.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect

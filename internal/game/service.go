@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-	merkletree "github.com/wealdtech/go-merkletree"
+	// merkletree "github.com/wealdtech/go-merkletree"
 
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/blockchain"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
@@ -20,7 +20,7 @@ import (
 	"github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go-sdk/access/grpc"
 	"github.com/rs/zerolog/log"
-	keccak "github.com/wealdtech/go-merkletree/keccak256"
+	// keccak "github.com/wealdtech/go-merkletree/keccak256"
 	"gorm.io/gorm"
 )
 
@@ -185,7 +185,8 @@ func (gs *gameService) joinGame(joinGame JoinGameRequest, gameId uint64, userEma
 		owner, _ := strconv.ParseUint(userId, 10, 64)
 		var points []*model.GameGridPoint
 		for _, singlePoint := range mtreeData {
-			points = append(points, pointFromData(string(singlePoint), gameId, owner))
+			sp, _ := singlePoint.Serialize()
+			points = append(points, pointFromData(string(sp), gameId, owner))
 		}
 
 		f = tx.Table("game_grid_point").Create(points)
@@ -216,7 +217,7 @@ func (gs *gameService) joinGame(joinGame JoinGameRequest, gameId uint64, userEma
 			return f.Error
 		}
 
-		gs.gameContractBridge.sendJoinGame(float32(game.Stake), merkle.Root(), *game.FlowId, userAuthorizer)
+		gs.gameContractBridge.sendJoinGame(float32(game.Stake), merkle.Root, *game.FlowId, userAuthorizer)
 		return nil
 
 	})
@@ -322,7 +323,8 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 
 		var points []*model.GameGridPoint
 		for _, singlePoint := range mtreeData {
-			points = append(points, pointFromData(string(singlePoint), createdGame.Id, owner))
+			sp, _ := singlePoint.Serialize()
+			points = append(points, pointFromData(string(sp), createdGame.Id, owner))
 		}
 
 		f = tx.Table("game_grid_point").Create(&points)
@@ -331,7 +333,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 			return f.Error
 		}
 
-		gs.gameContractBridge.sendCreateGameTx(createGame.Stake, merkle.Root(), createdGame.Id, userAuthorizer)
+		gs.gameContractBridge.sendCreateGameTx(createGame.Stake, merkle.Root, createdGame.Id, userAuthorizer)
 
 		return nil
 	})
@@ -524,7 +526,7 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 		opponentProofData.BlockPresent,
 		opponentProofData.Nonce)
 
-	proof, err := mtree.GenerateProof([]byte(proofNode))
+	proof, err := mtree.Proof(proofNode)
 	if err != nil {
 		return &reject.ProblemWithTrace{
 			Problem: reject.UnexpectedProblem(err),
@@ -545,21 +547,21 @@ func (gs *gameService) playMove(gameId uint64, userEmail string, request PlayMov
 
 	nonceNumber, _ := strconv.ParseUint(opponentProofData.Nonce, 10, 64)
 
-	verify, err := merkletree.VerifyProofUsing([]byte(blockchain.CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), opponentProofData.BlockPresent, fmt.Sprint(nonceNumber))), proof, mtree.Root(), keccak.New(), nil)
+	// verify, err := merkletree.VerifyProofUsing([]byte(blockchain.CreateMerkleTreeNode(int32(opponentProofData.CoordinateX), int32(opponentProofData.CoordinateY), opponentProofData.BlockPresent, fmt.Sprint(nonceNumber))), proof, mtree.Root(), keccak.New(), nil)
 
-	verifyProof, err := merkletree.VerifyProofUsing([]byte(proofNode), proof, mtree.Root(), keccak.New(), nil)
+	// verifyProof, err := merkletree.VerifyProofUsing([]byte(proofNode), proof, mtree.Root(), keccak.New(), nil)
 
 	log.Error().Interface("nonce", nonceNumber).Msg("Nonce number")
 
-	log.Error().Interface("verify root", verify).Msg("VERIFY ROOT DEBUG:")
+	// log.Error().Interface("verify root", verify).Msg("VERIFY ROOT DEBUG:")
 
-	log.Error().Interface("verify proof", verifyProof).Msg("VERIFY PROOF DEBUG:")
+	// log.Error().Interface("verify proof", verifyProof).Msg("VERIFY PROOF DEBUG:")
 
 	log.Error().Interface("proof", proof).Msg("LOG PROOF:")
 
-	log.Error().Interface("proof hashes", proof.Hashes).Msg("LOG PROOF:")
+	// log.Error().Interface("proof hashes", proof.).Msg("LOG PROOF:")
 
-	gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, proof.Hashes,
+	gs.gameContractBridge.sendMove(*game.FlowId, request.X, request.Y, proof.Siblings,
 		&opponentProofData.BlockPresent, &opponentProofData.CoordinateX, &opponentProofData.CoordinateY, &nonceNumber, userAuthorizer)
 
 	return nil

@@ -1,8 +1,8 @@
 package blockchain
 
 import (
-	"crypto/sha256"
-	"errors"
+	// "crypto/sha256"
+	// "errors"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -10,50 +10,42 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"github.com/txaty/go-merkletree"
 
-	mtreeOld "github.com/cbergoon/merkletree"
+	// mtreeOld "github.com/cbergoon/merkletree"
 	"github.com/kollektive-hackathon/battleblocks-backend/internal/pkg/model"
-	"github.com/wealdtech/go-merkletree"
+	// "github.com/wealdtech/go-merkletree"
 	keccak "github.com/wealdtech/go-merkletree/keccak256"
 )
 
 type TreeContent struct {
-	Field string
+	Field []byte
 }
 
-// CalculateHash hashes the values of a TestContent
-func (t TreeContent) CalculateHash() ([]byte, error) {
-	h := sha256.New()
-	if _, err := h.Write([]byte(t.Field)); err != nil {
-		return nil, err
-	}
-
-	return h.Sum(nil), nil
+func (t *TreeContent) Serialize() ([]byte, error) {
+	return t.Field, nil
 }
 
-// Equals tests for equality of two Contents
-func (t TreeContent) Equals(other mtreeOld.Content) (bool, error) {
-	otherTC, ok := other.(TreeContent)
-	if !ok {
-		return false, errors.New("value is not of type TestContent")
-	}
-	return t.Field == otherTC.Field, nil
-}
 
-func CreateMerkleTreeNode(x, y int32, present bool, nonce string) string {
+func CreateMerkleTreeNode(x, y int32, present bool, nonce string) *TreeContent {
 	// Format: SHIP_PRESENT|X|Y|NONCE
 	var sp int8
 	if present {
 		sp = 1
 	}
 	log.Printf("%v%v%v%v", sp, x, y, nonce)
-	return fmt.Sprintf("%v%v%v%v", sp, x, y, nonce)
+
+	t :=&TreeContent{
+		Field: []byte(fmt.Sprintf("%v%v%v%v", sp, x, y, nonce)),
+	}
+
+	return t
 }
 
-func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64]model.Block) (*merkletree.MerkleTree, [][]byte, error) {
-	li := make([][]string, 10)
+func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64]model.Block) (*merkletree.MerkleTree, []merkletree.DataBlock, error) {
+	li := make([][]*TreeContent, 10)
 	for i := range li {
-		li[i] = make([]string, 10)
+		li[i] = make([]*TreeContent, 10)
 	}
 
 	for i := 0; i < 10; i++ {
@@ -82,15 +74,24 @@ func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64
 		}
 	}
 
-	treeData := [][]byte{}
+	treeData := []merkletree.DataBlock{}
 
 	for i := 0; i < 10; i++ {
 		for j := 0; j < 10; j++ {
-			treeData = append(treeData, []byte(li[i][j]))
+			treeData = append(treeData, li[i][j])
 		}
 	}
 
-	mt, err := merkletree.NewUsing(treeData, keccak.New(), nil)
+	conf := &merkletree.Config{
+		HashFunc: func(d []byte) ([]byte, error) {
+			return keccak.New().Hash(d), nil
+		},
+		Mode:               merkletree.ModeTreeBuild,
+		SortSiblingPairs:   true,
+	}
+
+	// mt, err := merkletree.NewUsing(treeData, keccak.New(), nil)
+	mt,err := merkletree.New(conf, treeData)
 	if err != nil {
 		log.Warn().Err(err).Msg("Error while creating merkle tree")
 		return nil, nil, err
@@ -99,18 +100,28 @@ func CreateMerkleTree(presentPlacements []model.Placement, blocksById map[uint64
 	return mt, treeData, nil
 }
 
-func CreateMerkleTreeFromData(presentData []model.GameGridPoint) (*merkletree.MerkleTree, [][]byte, error) {
-	treeData := [][]byte{}
+func CreateMerkleTreeFromData(presentData []model.GameGridPoint) (*merkletree.MerkleTree, []merkletree.DataBlock, error) {
+	treeData := []merkletree.DataBlock{}
 	for _, data := range presentData {
 		d := CreateMerkleTreeNode(
 			int32(data.CoordinateX),
 			int32(data.CoordinateY),
 			data.BlockPresent,
 			data.Nonce)
-		treeData = append(treeData, []byte(d))
+		treeData = append(treeData, d)
 	}
 
-	mt, err := merkletree.NewUsing(treeData, keccak.New(), nil)
+	// mt, err := merkletree.(treeData, keccak.New(), nil)
+	conf := &merkletree.Config{
+		HashFunc: func(d []byte) ([]byte, error) {
+			return keccak.New().Hash(d), nil
+		},
+		Mode:               merkletree.ModeProofGenAndTreeBuild,
+		SortSiblingPairs:   true,
+	}
+
+	// mt, err := merkletree.NewUsing(treeData, keccak.New(), nil)
+	mt,err := merkletree.New(conf, treeData)
 
 	if err != nil {
 		log.Warn().Err(err).Msg("Error while creating merkle tree")
