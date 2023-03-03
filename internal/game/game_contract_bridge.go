@@ -183,11 +183,12 @@ func (b *gameContractBridge) handleMoved(_ context.Context, message *gcppubsub.M
 			SELECT EXISTS(
 			SELECT 1 
 			FROM game_grid_point 
-			WHERE game_id = ? 
+			WHERE game_id = ?
+			AND user_id = ?
 			AND coordinate_x = ? 
 			AND coordinate_y = ? 
 			AND block_present = true);
-			`, game.Id, messagePayload.X, messagePayload.Y).
+			`, game.Id, user.Id, messagePayload.X, messagePayload.Y).
 			Scan(&isHit)
 
 		if result.Error != nil {
