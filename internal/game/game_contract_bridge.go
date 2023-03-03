@@ -332,7 +332,7 @@ func (b *gameContractBridge) handleGameOver(_ context.Context, message *gcppubsu
 		Model(&model.Game{}).
 		Where("flow_id = ?", messagePayload.GameId).
 		Updates(map[string]any{
-			"winner":      user.Id,
+			"winner_id":   user.Id,
 			"game_status": "FINISHED",
 		})
 
