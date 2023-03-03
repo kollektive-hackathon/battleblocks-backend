@@ -27,6 +27,7 @@ type AccountDelegated struct {
 
 type accountContractBridge struct {
 	db              *gorm.DB
+	profileService  *profile.ProfileService
 	notificationHub *ws.WebSocketNotificationHub
 }
 
@@ -62,22 +63,9 @@ func (b *accountContractBridge) handleCustodialAccountCreated(_ context.Context,
 
 	message.Ack()
 
-	var p profile.Profile
-	result = b.db.
-		Table("battleblocks_user").
-		Joins("INNER JOIN user_block_inventory ON battleblocks_user.id = user_block_inventory.user_id").
-		Joins("INNER JOIN custodial_wallet ON battleblocks_user.custodial_wallet_id = custodial_wallet.id").
-		Where("custodial_wallet.address = ?", messagePayload.Address).
-		Select(`
-			battleblocks_user.id, 
-			battleblocks_user.email,
-			battleblocks_user.username,
-			custodial_wallet.address AS custodial_wallet_address,
-			battleblocks_user.self_custody_wallet_address AS self_custody_wallet_address
-		`).
-		Scan(&p)
+	p, loadProfileProblem := b.profileService.FindByCustodialAddress(messagePayload.Address)
 
-	if result.Error != nil {
+	if loadProfileProblem != nil {
 		log.Warn().Err(result.Error).Msg("Cannot fetch profile on AccountCreated event")
 	}
 

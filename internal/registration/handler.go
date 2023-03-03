@@ -24,6 +24,7 @@ func RegisterRoutesAndSubscriptions(rg *gin.RouterGroup, db *gorm.DB) {
 			db: db,
 			bridge: &accountContractBridge{
 				db:              db,
+				profileService:  &profile.ProfileService{Db: db},
 				notificationHub: ws.NewNotificationHub(),
 			},
 		},
