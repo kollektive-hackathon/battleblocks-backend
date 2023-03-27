@@ -350,6 +350,7 @@ func (gs *gameService) createGame(createGame CreateGameRequest, userEmail string
 
 type PlacementsView struct {
 	ColorHex  string `json:"colorHex"`
+	Pattern   string `json:"pattern"`
 	X         string `json:"x"`
 	Y         string `json:"y"`
 	BlockType string `json:"blockType"`
@@ -358,7 +359,7 @@ type PlacementsView struct {
 func (gs *gameService) getPlacements(gameId uint64, userEmail string) ([]PlacementsView, *reject.ProblemWithTrace) {
 	var placements []PlacementsView
 
-	result := gs.db.Raw(`SELECT b.color_hex as color_hex, b.block_type as block_type, bp.coordinatex as X, bp.coordinatey as Y 
+	result := gs.db.Raw(`SELECT b.color_hex as color_hex, b.pattern as pattern, b.block_type as block_type, bp.coordinatex as X, bp.coordinatey as Y 
 		FROM block_placement bp
 		JOIN block b on bp.block_id = b.id
 		WHERE game_id = ? AND user_id =
