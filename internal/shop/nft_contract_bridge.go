@@ -71,7 +71,7 @@ func (b *nftContractBridge) burn(id uint64, authorizers []blockchain.Authorizer)
 }
 
 // TODO implement consumers
-func (b *nftContractBridge) handleWithdrew(_ context.Context, _ *gcppubsub.Message) {
+func (b *nftContractBridge) handleWithdraw(_ context.Context, _ *gcppubsub.Message) {
 }
 
 func (b *nftContractBridge) handleMinted(_ context.Context, m *gcppubsub.Message) {

@@ -43,6 +43,7 @@ func (s *ProfileService) FindById(id uint64) (*Profile, *reject.ProblemWithTrace
 			block.block_type AS type,
 			block.rarity AS rarity,
 			block.color_hex AS color_hex,
+			block.pattern AS pattern,
 			user_block_inventory.active AS active
 		`).
 		Scan(&userBlocksInventory)
@@ -92,6 +93,7 @@ func (s *ProfileService) FindByEmail(email string) (*Profile, *reject.ProblemWit
 			block.name AS name,
 			block.block_type AS type,
 			block.rarity AS rarity,
+			block.pattern AS pattern,
 			block.color_hex AS color_hex,
 			user_block_inventory.active AS active
 		`).

@@ -5,6 +5,7 @@ type Block struct {
 	Name      string `json:"name"`
 	BlockType string `json:"blockType"`
 	Rarity    string `json:"rarity"`
+	Pattern   string `json:"pattern"`
 	Price     uint32 `json:"price"`
 	ColorHex  string `json:"colorHex"`
 }
