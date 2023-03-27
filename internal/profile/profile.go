@@ -14,6 +14,7 @@ type UserInventoryBlock struct {
 	Name     string `json:"name"`
 	Type     string `json:"blockType"`
 	Rarity   string `json:"rarity"`
+	Pattern  string `json:"pattern"`
 	ColorHex string `json:"colorHex"`
 	Active   bool   `json:"active"`
 }
